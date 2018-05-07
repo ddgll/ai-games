@@ -2,63 +2,61 @@ const ACTIONS_STRING = [
   'up',
   'upright',
   'upleft',
-  'down'
+  'right',
+  'left',
+  'down',
+  'downright',
+  'downleft'
 ]
 
 function Car (x, y, brain, isBest, isTest) {
-  this.position = createVector(x, y)
-  this.oldPosition = createVector(x, y)
+  this.id = uuid()
   this.r = 5
-  this.heading = 0
-  this.rotation = 0
-  this.reverse = false
-
-  this.chronos = []
-  this.checkpoints = Math.floor(DEFAULT_CIRCUIT_SIZE / 5)
-
   this.nbSensors = 8
-
-  this.seight = DEFAULT_ROAD_WIDTH * 1
-
-  this.nomoves = 0
-
-  this.currentIndex = 0
 
   // this.angles = [ -QUARTER_PI, 0, QUARTER_PI, -QUARTER_PI + QUARTER_PI / 2, QUARTER_PI - QUARTER_PI / 2, -HALF_PI, HALF_PI, -PI, -PI + QUARTER_PI, -PI - QUARTER_PI ]
   // this.angles = [ -QUARTER_PI, 0, QUARTER_PI, -HALF_PI - QUARTER_PI, HALF_PI + QUARTER_PI ]
   this.angles = [ -QUARTER_PI, 0, QUARTER_PI, -HALF_PI, HALF_PI ]
   // this.angles = [ 0 ]
-  this.obstacles = [ ]
-  this.angles.forEach(a => this.obstacles.push(null))
-
-  this.velocity = createVector(0, 0)
-  this.isBoosting = false
-  this.isBreaking = false
-
-  this.killed = false
-  this.debug = false
-  this.first = false
-
-  this.distance = 0
 
   this.best = isBest
   this.test = isTest
-
-  this.bestScoreFrame = 0
-  this.score = 0
-  this.bestScore = 0
-  this.frames = 0
-  this.fitness = 0
-  this.roadsIndex = 0
-  this.turns = 0
-
-  this.normalizedPosition = createVector(0, 0)
 
   if (brain) {
     this.brain = brain
   } else {
     this.brain = new neataptic.architect.Random(13, 8, 1)
   }
+
+  this.reset = function (x, y) {
+    this.bestScoreFrame = 0
+    this.score = 0
+    this.bestScore = 0
+    this.frames = 0
+    this.fitness = 0
+    this.roadsIndex = 0
+    this.turns = 0
+    this.position = createVector(x, y)
+    this.oldPosition = createVector(x, y)
+    this.normalizedPosition = createVector(0, 0)
+    this.heading = 0
+    this.rotation = 0
+    this.reverse = false
+    this.chronos = []
+    this.first = false
+    this.distance = 0
+    this.killed = false
+    this.obstacles = [ ]
+    this.angles.forEach(a => this.obstacles.push(null))
+    this.velocity = createVector(0, 0)
+    this.isBoosting = false
+    this.isBreaking = false
+    this.currentIndex = 0
+    this.checkpoints = Math.floor(DEFAULT_CIRCUIT_SIZE / 5)
+    this.seight = DEFAULT_ROAD_WIDTH * 1
+  }
+
+  this.reset(x, y)
 
   this.oneHotEncode = function (type){
     const zeros = Array.apply(null, Array(ACTIONS_STRING.length)).map(Number.prototype.valueOf, 0);
@@ -206,9 +204,9 @@ function Car (x, y, brain, isBest, isTest) {
     const inputs = [
       (v.x + 1) / 2,
       (v.y + 1) / 2,
-      (this.velocity.mag() + 5) / 10,
-      p.x,
-      p.y,
+      (this.velocity.mag() + 1) / 10,
+      (p.x + 1) / 2,
+      (p.y + 1) / 2,
       this.reverse ? 0 : 1,
       (this.heading + 2 * PI) / (2 * PI + 2 * PI)
     ]
@@ -248,10 +246,30 @@ function Car (x, y, brain, isBest, isTest) {
         this.boosting(true)
         this.setRotation(TURN_ANGLE)
         break;
+      case 'left':
+        this.breaking(false)
+        this.boosting(false)
+        this.setRotation(-TURN_ANGLE)
+        break;
+      case 'right':
+        this.breaking(false)
+        this.boosting(false)
+        this.setRotation(TURN_ANGLE)
+        break;
       case 'down':
         this.breaking(true)
         this.boosting(false)
         this.setRotation(0)
+        break;
+      case 'downRight':
+        this.breaking(true)
+        this.boosting(false)
+        this.setRotation(TURN_ANGLE)
+        break;
+      case 'downLeft':
+        this.breaking(true)
+        this.boosting(false)
+        this.setRotation(-TURN_ANGLE)
         break;
     }
   }
@@ -293,6 +311,7 @@ function Car (x, y, brain, isBest, isTest) {
         this.bestScoreFrame = this.frames
       }
     } else if (!this.test) {
+      this.score /= 2
       this.crash()
     }
   }
@@ -301,7 +320,8 @@ function Car (x, y, brain, isBest, isTest) {
     if (this.killed) return
     this.velocity.mult(AIR_RESISTENCE)
     this.frames++
-    if (!this.test && this.bestScoreFrame && this.frames - this.bestScoreFrame > 100) {
+    if (!this.test && this.frames - this.bestScoreFrame > 100) {
+      this.score /= 2
       this.crash()
     }
     if (this.frames > (this.turns + 1) * 5000 || this.turns >= 3) this.crash()

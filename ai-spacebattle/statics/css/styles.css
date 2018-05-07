@@ -1,0 +1,27 @@
+#container {
+  position: relative;
+  overflow: hidden;
+}
+
+#game {
+  position: relative;
+}
+
+#frame {
+  position: fixed;
+  bottom: 0;
+  width: 400px;
+}
+
+#log {
+  position: fixed;
+  top: 620px;
+  bottom: 0;
+  right: 0;
+  overflow-y: auto;
+}
+
+#background {
+  position: absolute;
+  background: url(/images/background.png) repeat center center transparent;
+}

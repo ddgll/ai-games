@@ -1,5 +1,5 @@
 const FRAME_RATE = 30
-const POPULATION = 200
+var POPULATION = 200
 const DEFAULT_ROAD_WIDTH = 50
 var DEFAULT_CIRCUIT_SIZE
 const DEBUG = true
@@ -10,12 +10,13 @@ const CANVAS_WIDTH = 600
 const CANVAS_HEIGHT = 700
 const TURN_ANGLE = 0.1
 const AIR_RESISTENCE = 0.90
-const BOOST_FORCE = 0.30
+const BOOST_FORCE = 0.35
 const BREAK_RESISTENCE = 0.05
 const SHOW_RACE_LINE = true
 const WALL_SIZE = 8
 const SEIGHT_PAS = 0.1
 
+var nextNbPopulation = POPULATION * 1
 var neat
 var db
 var counter = 0
@@ -24,16 +25,19 @@ var circuit
 var roads
 var best
 var selectSize
+var selectPopulation
+var selectBrain
 var testCar
-var bestDna = localStorage.getItem('air-bestdna')
 var bestBrain
 var bestScore = -Infinity
 var bestTurns = 0
 var bestFrames = 0
 var bestNumGen = 0
+var nb3Turns = 0
 var numGeneration = 0
 var winners
 var cars
+var showClones = false
 
 function sqr(a) {
   return a*a;
@@ -56,43 +60,52 @@ function setup () {
   collideDebug(true)
   db = new Dexie("ai-racer")
   db.version(1).stores({
-    circuits: 'id,size'
+    circuits: 'id,size',
+    brains: 'id,circuitId,score'
   })
 
   frameRate(FRAME_RATE)
   createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT)
   const uiX = CANVAS_WIDTH + 10
   let uiY = 9
-  X_START = width / 4
-  Y_START = height / 2
+  X_START = 0
+  Y_START = 0
   log = createDiv('')
 
-  let button = createButton('START')
-  button.position(uiX, uiY);
-  button.mousePressed(() => {
+  let startButton, stopButton
+
+  startButton = createButton('Start')
+  startButton.position(uiX, uiY);
+  startButton.mousePressed(() => {
     loop();
+    stopButton.elt.style.display = 'block'
+    startButton.elt.style.display = 'none'
   })
-  button = createButton('STOP')
-  button.position(uiX, uiY+=40);
-  button.mousePressed(() => {
+  stopButton = createButton('Pause')
+  stopButton.position(uiX, uiY);
+  stopButton.mousePressed(() => {
     noLoop();
+    startButton.elt.style.display = 'block'
+    stopButton.elt.style.display = 'none'
   })
-  button = createButton('RESET')
-  button.position(uiX, uiY+=40);
-  button.mousePressed(() => {
-    noLoop();
-    document.location.reload()
-  })
-  button = createButton('Reset Frame Rate')
+  startButton.elt.style.display = 'none'
+  let button = createButton('Reset Frame Rate')
   button.position(uiX, uiY+=40);
   button.mousePressed(() => {
     slider.value(1)
     sliderm.value(1)
   })
+  button = createCheckbox('Show Clones', showClones)
+  button.position(uiX, uiY+=40);
+  button.changed(() => {
+    showClones = !showClones
+  })
   slider = createSlider(1, 100, 1)
   slider.position(uiX, uiY+=40)
   sliderm = createSlider(1, 20, 1)
   sliderm.position(uiX, uiY+=40)
+  var p = createP('Taille du circuit')
+  p.position(uiX, uiY+=40)
   selectSize = createSelect()
   selectSize.position(uiX, uiY+=40)
   selectSize.changed(() => {
@@ -101,14 +114,47 @@ function setup () {
   button = createButton('Change circuit')
   button.position(uiX, uiY+=40)
   button.mousePressed(() => {
+    nb3Turns = 0
+    if (cars && cars.length) {
+      noLoop()
+      bestScore = 0
+      bestBrain
+      bestScore = -Infinity
+      bestTurns = 0
+      bestFrames = 0
+      bestNumGen = 0
+      numGeneration = 0
+    }
+    if (POPULATION !== nextNbPopulation) {
+      POPULATION = nextNbPopulation
+      if (neat) neat = null
+      if (cars && cars.length) cars = []
+    }
     db.circuits.where('size').equals(DEFAULT_CIRCUIT_SIZE).toArray().then((circuits) => {
       if (!circuits || !circuits.length) {
         console.log(circuits, DEFAULT_CIRCUIT_SIZE)
         alert('Aucun circuit de cette taille...chelou...')
       }
       const dna = random(circuits)
-      circuit = new Circuit(X_START, Y_START, DEFAULT_CIRCUIT_SIZE, dna.dna, false, false)
+      circuit = new Circuit(X_START, Y_START, DEFAULT_CIRCUIT_SIZE, dna.dna, false, false, dna.id)
       circuit.roadsFromDna()
+      if (cars && cars.length) {
+        first = null
+        if (best) best.reset()
+        cars.forEach(c => c.reset(X_START, Y_START))
+        loop()
+      }
+      if (testCar) testCar.reset()
+
+      selectBrain.elt.innerHTML = ''
+      const brains = []
+      db.brains.where('circuitId').equals(circuit.id).toArray().then((brains_) => {
+        brains = brains_
+        brains.sort((a, b) => b.score - a.score)
+        brains.forEach(b => {
+          selectBrain.options(b.score)
+        })
+      })
     })
   })
   button = createButton('TEST Mode')
@@ -116,6 +162,8 @@ function setup () {
   button.mousePressed(() => {
     testCar = new Car(X_START, Y_START, null, false, true)
     circuits = []
+    cars = null
+    neat = null
   })
   button = createButton('Génération Mode')
   button.position(uiX, uiY+=40);
@@ -123,6 +171,23 @@ function setup () {
     initGeneration()
     startEvaluation(X_START, Y_START)
   })
+  var p = createP('Nombre de clônes')
+  p.position(uiX, uiY+=40)
+  selectPopulation = createSelect()
+  selectPopulation.position(uiX, uiY+=40)
+  selectPopulation.changed(() => {
+    nextNbPopulation = +selectPopulation.value()
+  })
+  selectPopulation.option(50)
+  selectPopulation.option(100)
+  selectPopulation.option(150)
+  selectPopulation.option(200)
+  selectPopulation.option(250)
+  
+  p = createP('Choix du cerveau')
+  p.position(uiX, uiY+=40)
+  selectBrain = createSelect()
+  selectBrain.position(uiX, uiY+=40)
 
   db.circuits.orderBy('size').uniqueKeys((sizes) => {
     for (let size of sizes) {
@@ -195,7 +260,7 @@ function draw () {
 
   if (circuit) {
     circuit.draw()
-    if (cars && !first) cars.forEach(c => c.draw())
+    if (cars && (!first || showClones)) cars.forEach(c => c.draw())
     if (first) first.draw()
     if (best) best.draw()
     if (testCar) testCar.draw()

@@ -2,7 +2,7 @@ function initGeneration (population) {
   testCar = null
   neat = new neataptic.Neat(
     17,
-    4,
+    8,
     null,
     {
       selection: neataptic.methods.selection.FITNESS_PROPORTIONATE,
@@ -12,7 +12,7 @@ function initGeneration (population) {
       popsize: POPULATION,
       mutationRate: MUTATION_RATE,
       elitism: Math.round(ELITISM_PERCENT * POPULATION),
-      network: new neataptic.architect.Random(17, 17, 4)
+      network: new neataptic.architect.Random(17, 17, 8)
     }
   )
   if(population && population.length) neat.population = population
@@ -28,23 +28,33 @@ function startEvaluation(x, y){
 }
 
 function endEvaluation(x, y){
+  if (!neat) return
   calculateFitness()
   neat.sort()
 
   const bes = neat.getFittest()
   if (bes && bes.cScore > bestScore) {
     // console.log('NEW BEST SCORE !!!!', bes.cScore)
-    // if (bestTurns >= 3) {
-      best = new Car (X_START, Y_START, bes, true)
-    // }
-    bestBrain = bes
+    const jsonBrain = bes.toJSON()
+    if (bestTurns >= 3) {
+      // db.brains.put({
+      //   id: bes.cId,
+      //   circuitId: circuit.id,
+      //   score: bes.cScore,
+      //   frames: bes.cFrames,
+      //   brain: jsonBrain
+      // })
+      nb3Turns++
+    }
+    best = new Car (X_START, Y_START, neataptic.Network.fromJSON(jsonBrain), true)
+    bestBrain = jsonBrain
     bestScore = bes.cScore
     bestTurns = bes.cTurns
     bestFrames = bes.cFrames
     bestNumGen = neat.generation
     // drawGraph(bes.graph(300, 200), '.svg')
   } else if (bestBrain) {
-    best = new Car (X_START, Y_START, bestBrain, true)
+    best = new Car (X_START, Y_START, neataptic.Network.fromJSON(bestBrain), true)
   }
   // if (bestTurns === 3) {
   //   neat.mutation = [neataptic.methods.mutation.MOD_WEIGHT, neataptic.methods.mutation.MOD_BIAS, neataptic.methods.mutation.MOD_ACTIVATION]
@@ -75,6 +85,7 @@ function calculateFitness () {
   let sum = 0, max = 0, min = Infinity, bes, wins = []
   cars.forEach(c => {
     c.brain.score = c.calculateFitness()
+    c.brain.cId = c.id
     c.brain.cScore = c.score
     c.brain.cFrames = c.frames
     c.brain.cTurns = c.turns

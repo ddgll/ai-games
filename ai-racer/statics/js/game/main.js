@@ -1,6 +1,6 @@
 const FRAME_RATE = 10
 const POPULATION = 100
-const DEFAULT_ROAD_WIDTH = 50
+const DEFAULT_ROAD_WIDTH = 15
 let DEFAULT_CIRCUIT_SIZE = 10
 const DEBUG = true
 const MAX_SIZE = 200
@@ -24,6 +24,7 @@ var bestFitness
 var bestNumGen
 var numGeneration = 0
 var winners
+var sizeWinners = 0
 
 function sqr(a) {
   return a*a;
@@ -119,20 +120,20 @@ function setup () {
 
   
   roads = [
-    new Road(100, 60, 'upDown'),
-    new Road(200, 85, 'downUp'),
-    new Road(300, 60, 'leftRight'),
-    new Road(450, 60, 'rightLeft'),
+    // new Road(100, 60, 'upDown'),
+    // new Road(200, 85, 'downUp'),
+    // new Road(300, 60, 'leftRight'),
+    // new Road(450, 60, 'rightLeft'),
 
-    new Road(100, 200, 'leftUp'),
-    new Road(200, 200, 'leftDown'),
-    new Road(300, 200, 'rightUp'),
-    new Road(40, 200, 'rightDown'),
+    // new Road(100, 200, 'leftUp'),
+    // new Road(200, 200, 'leftDown'),
+    // new Road(300, 200, 'rightUp'),
+    // new Road(40, 200, 'rightDown'),
 
-    new Road(100, 300, 'upLeft'),
-    new Road(200, 300, 'downLeft'),
-    new Road(300, 300, 'upRight'),
-    new Road(400, 300, 'downRight')
+    // new Road(100, 300, 'upLeft'),
+    // new Road(200, 300, 'downLeft'),
+    // new Road(300, 300, 'upRight'),
+    // new Road(400, 300, 'downRight')
   ]
 }
 
@@ -165,8 +166,13 @@ function draw () {
         size: w.size,
         dna: w.dna
       })
+      sizeWinners++
       circuits.push(new Circuit(w.x, w.y, w.size))
     })
+    if (sizeWinners === 10) {
+      sizeWinners = 0
+      DEFAULT_CIRCUIT_SIZE += 2
+    }
     reset()
     initCircuits()
   } else {

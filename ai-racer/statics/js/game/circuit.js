@@ -20,8 +20,8 @@ const DIR_STRING = [
 ]
 
 class Circuit {
-  constructor (x, y, size, dna_, isBest, isTest) {
-    this.id = uuid()
+  constructor (x, y, size, dna_, isBest, isTest, id) {
+    this.id = id || uuid()
     this.x = x
     this.y = y
     this.dead = false
@@ -56,6 +56,19 @@ class Circuit {
       this.addRoad(DIR_STRING[this.dna[i]])
     }
     this.calculateFitness()
+    let xmin = Infinity, ymin = Infinity, xmax = -Infinity, ymax = -Infinity
+    this.roads.forEach(r => {
+      if (r.x > xmax) xmax = r.x
+      if (r.y > ymax) ymax = r.y
+      if (r.x < xmin) xmin = r.x
+      if (r.y < ymin) ymin = r.y
+      if (r.xFin > xmax) xmax = r.xFin
+      if (r.yFin > ymax) ymax = r.yFin
+      if (r.xFin < xmin) xmin = r.xFin
+      if (r.yFin < ymin) ymin = r.yFin
+    })
+    this.xCenter = (xmax + xmin) / 2
+    this.yCenter = (ymax + ymin) / 2
   }
 
   getLastRoad () {
@@ -288,6 +301,7 @@ class Circuit {
 
   draw () {
     // if (this.dead) return
+    translate(width / 2 - this.xCenter, height / 2 - this.yCenter)
     this.roads.forEach((road, index) => {
       if (index <= this.lastGoodIndex) road.draw()
       if (index > this.lastGoodIndex && (this.test || this.best)) {
