@@ -52,9 +52,10 @@ module.exports = class GameContext {
     }
     this.snapshot = ctx
     this.counter++
-    this.planets.forEach(p => p.update(this.planets, this.ships, this.asteroids))
-    this.ships.forEach(s => s.update(this.planets, this.ships, this.asteroids))
-    this.asteroids.forEach(s => s.update(this.ships))
+    for (let i = 0, l = this.planets.length; i < l; i++) this.planets[i].update(this.planets, this.ships, this.asteroids)
+    for (let i = 0, l = this.ships.length; i < l; i++) this.ships[i].update(this.planets, this.ships, this.asteroids)
+    for (let i = 0, l = this.asteroids.length; i < l; i++) this.asteroids[i].update(this.ships)
+    this.ships = this.ships.filter(s => s.life > 0)
     // this.bullets.forEach(b => b.update())
   }
 

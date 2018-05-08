@@ -1,25 +1,40 @@
 class Ship extends Element {
-  constructor (id, context, renderer, log, me) {
+  constructor (id, context, renderer, log) {
     super(id, context, renderer, log)
-    this.me = me
-    this.sprite = renderer.add.sprite(context.x, context.y, 'heros', 'ship_1.png')
-    this.sprite.anchor.setTo(0.5, 0.5)
-    if (this.me === id) {
-      renderer.camera.follow(this.sprite)
-      this.debug('Create ship ' + id)
-    } else {
-      this.debug('Create ennemy ' + id)
-    }
+
+    this.debug('Create ship ' + id)
   }
 
-  update (context) {
-    this.context = context
+  draw (player) {
+    const id = this.id
+    if (!this.context) return
     const x = parseFloat(this.context.x)
     const y = parseFloat(this.context.y)
-    const a = parseFloat(this.context.a)
-    this.sprite.rotation = a + Math.PI / 2
-    this.sprite.x = x
-    this.sprite.y = y
-    // this.debug(`Update ship ${this.id}... ${JSON.stringify(this.context)} !!`, true)
+    const r = this.renderer
+    const a = parseFloat(this.context.a) - Math.PI / 2
+    const l = parseInt(this.context.l)
+    const s = parseInt(this.context.s)
+    if (l > 0) {
+      // this.debug(`Ship : ${x}, ${y}, ${a}`, true)
+      if (id === player.id) {
+        // this.debug(`Ship : ${x}, ${y}, ${a}`, true)
+        r.fill(255, 255, 255, 255)
+      } else {
+        r.fill(255, 0, 0)
+      }
+      r.push()
+      const width = CONSTANTS.SHIP_SIZE * 2 * l / CONSTANTS.MAX_LIFE 
+      r.rect(x - CONSTANTS.SHIP_SIZE, y + CONSTANTS.SHIP_SIZE, width, 4)
+      r.push()
+      r.stroke(255)
+      r.strokeWeight(1)
+      r.noFill()
+      r.rect(x - CONSTANTS.SHIP_SIZE, y + CONSTANTS.SHIP_SIZE, CONSTANTS.SHIP_SIZE * 2, 4)
+      r.pop()
+      r.translate(x, y)
+      r.rotate(a)
+      r.triangle(-CONSTANTS.SHIP_SIZE/2, 0, CONSTANTS.SHIP_SIZE/2, 0, 0, CONSTANTS.SHIP_SIZE)
+      r.pop()
+    }
   }
 }

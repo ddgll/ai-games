@@ -20,7 +20,6 @@ var options = {
 app.use(express.static('statics', options))
 
 app.get('/', (req, res) => res.sendFile(path.resolve('./index.html')))
-app.get('/p5', (req, res) => res.sendFile(path.resolve('./index-p5.html')))
 
 io.on('connection', realtime(io))
 

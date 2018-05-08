@@ -3,19 +3,25 @@
   <head>
     <title>ai-spacebattle</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.0/socket.io.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/2.6.2/pixi.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/2.6.2/phaser.min.js"></script>
+    <script src="/js/libraries/p5/p5.min.js"></script>
     <script src="/js/constants.js"></script>
-    <script src="/js/game/fGame.js"></script>
+    <script src="/js/game/fExplosion.js"></script>
+    <script src="/js/game/fParticles.js"></script>
     <script src="/js/game/fElement.js"></script>
-    <script src="/js/game/fBullet.js"></script>
+    <script src="/js/game/fPlanet.js"></script>
+    <script src="/js/game/fAsteroid.js"></script>
     <script src="/js/game/fShip.js"></script>
+    <script src="/js/game/fBullet.js"></script>
     <script src="/js/game/fContext.js"></script>
     <script src="/js/game/main.js"></script>
     <link rel="stylesheet" type="text/css" href="/css/styles.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
   </head>
-  <body onload="init()">
-    <div id="game"></div>
+  <body onload="init()" style="overflow: hidden;">
+    <div id="container">
+      <div id="background"></div>
+      <div id="game"></div>
+    </div>
     <div id="frame"></div>
     <div id="log"></div>
     <svg class="svg" width="600px" height="400px" viewBox="200 0 600 400"/>

@@ -6,14 +6,23 @@ var game
 module.exports = function (io) {
   if (!game) game = new Game(io)
   return function (socket) {
-    const context = game.addShip()
-    const id = context.ship.id
+    let context = game.addShip()
+    let id = context.ship.id
     console.log('Client connexion', id)
     socket.emit('f', context)
 
     socket.on('disconnect', () => {
       console.log('Client disconnect', id)
       game.removeShip(id)
+    })
+
+    socket.on('s', () => {
+      console.log('RECEIVE RETRY', id, game.context.ships.find(s => s.id === id))
+      if (!game.context.ships.find(s => s.id === id)) {
+        context = game.addShip()
+        id = context.ship.id
+        socket.emit('f', context)
+      }
     })
 
     socket.on('m', ([x, y]) => {

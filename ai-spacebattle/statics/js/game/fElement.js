@@ -10,15 +10,14 @@ class Element {
     if (this.log) {
       const str = `- ${msg} <br>`
       if (flush) {
-        this.log.innerHTML = msg
+        this.log.innerHTML = str
       } else {
-        this.log.innerHTML = msg + this.log.innerHTML
+        this.log.innerHTML = str + this.log.innerHTML
       }
     }
   }
 
   update (context) {
     this.context = context
-    this.debug('UPDATE ELEMENT' + id)
   }
 }

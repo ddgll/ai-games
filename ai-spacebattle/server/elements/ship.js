@@ -12,7 +12,7 @@ module.exports = class Ship extends Element {
     this.minMoveDistance = CONSTANTS.MIN_MOVE_DISTANCE
     this.target = null
     this.score = 0
-    this.life = CONSTANTS.MAX_LIFE / 2
+    this.life = CONSTANTS.MAX_LIFE
     this.size = CONSTANTS.SHIP_SIZE
     this.bullets = []
     for (let i = 1, b; i <= CONSTANTS.BULLET_COUNT; i++) {
@@ -107,10 +107,10 @@ module.exports = class Ship extends Element {
       this.bullets[i].update(planets, ships)
     }
     if (this.btimer > 0) this.btimer--
-    if (this.x > this.xMax) this.x = this.xMax - CONSTANTS.SHIP_SIZE
-    if (this.x < this.xMin) this.x = this.xMin + CONSTANTS.SHIP_SIZE
-    if (this.y > this.yMax) this.y = this.yMax - CONSTANTS.SHIP_SIZE
-    if (this.y > this.xMax) this.y = this.yMax + CONSTANTS.SHIP_SIZE
+    // if (this.x > this.xMax) this.x = this.xMax - CONSTANTS.SHIP_SIZE
+    // if (this.x < this.xMin) this.x = this.xMin + CONSTANTS.SHIP_SIZE
+    // if (this.y > this.yMax) this.y = this.yMax - CONSTANTS.SHIP_SIZE
+    // if (this.y < this.xMax) this.y = this.yMax + CONSTANTS.SHIP_SIZE
   }
 
   circleCollide (x, y, r) {
