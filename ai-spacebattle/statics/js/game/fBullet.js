@@ -2,10 +2,10 @@ class Bullet extends Element {
   constructor (id, context, renderer, log, me) {
     super(id, context, renderer, log)
 
-    this.debug('Create bullet ' + id + ' =>' + context.o, 's' + me.id === this.owner)
+    this.debug('Create bullet ' + id + ' =>' + context.o)
 
     this.owner = context.o
-    this.mine = 's' + me.id === this.owner
+    this.mine = me && me.id ? 's' + me.id === this.owner : false
     this.x = parseFloat(context.x)
     this.y = parseFloat(context.y)
 
@@ -16,8 +16,8 @@ class Bullet extends Element {
 
   draw (me, ships) {
     if (this.dead) return
-    this.x = this.context.x
-    this.y = this.context.y
+    this.x = parseFloat(this.context.x)
+    this.y = parseFloat(this.context.y)
     if (this.mine) {
       // this.debug('DRAW MY BULLET (' + this.x + ', ' + this.y + ')', true)
       this.renderer.fill(150, 255, 150, 255)

@@ -1,7 +1,8 @@
 class Ship extends Element {
-  constructor (id, context, renderer, log) {
+  constructor (id, name, context, renderer, log) {
     super(id, context, renderer, log)
 
+    this.name = name
     this.debug('Create ship ' + id)
   }
 
@@ -14,13 +15,14 @@ class Ship extends Element {
     const a = parseFloat(this.context.a) - Math.PI / 2
     const l = parseInt(this.context.l)
     const s = parseInt(this.context.s)
+    const g = parseInt(this.context.g)
     if (l > 0) {
-      // this.debug(`Ship : ${x}, ${y}, ${a}`, true)
-      if (id === player.id) {
-        // this.debug(`Ship : ${x}, ${y}, ${a}`, true)
-        r.fill(255, 255, 255, 255)
+      const alpha = g === 1 ? 50 : 255
+      // this.debug(`Ship : ${x}, ${y}, ${a}, ${g}`, true)
+      if (player && id === player.id) {
+        r.fill(255, 255, 255, alpha)
       } else {
-        r.fill(255, 0, 0)
+        r.fill(255, 0, 0, alpha)
       }
       r.push()
       const width = CONSTANTS.SHIP_SIZE * 2 * l / CONSTANTS.MAX_LIFE 
@@ -30,10 +32,21 @@ class Ship extends Element {
       r.strokeWeight(1)
       r.noFill()
       r.rect(x - CONSTANTS.SHIP_SIZE, y + CONSTANTS.SHIP_SIZE, CONSTANTS.SHIP_SIZE * 2, 4)
+      const length = this.name.length * 3
+      r.strokeWeight(0.5)
+      r.text(this.name, x - length, y + CONSTANTS.SHIP_SIZE + 20)
       r.pop()
       r.translate(x, y)
       r.rotate(a)
       r.triangle(-CONSTANTS.SHIP_SIZE/2, 0, CONSTANTS.SHIP_SIZE/2, 0, 0, CONSTANTS.SHIP_SIZE)
+
+      // r.push()
+      // r.stroke(255)
+      // r.strokeWeight(1)
+      // r.fill(255)
+      // r.arc(0, 0, 100, 100, r.PI, r.PI + 1.5)
+      // r.pop()
+
       r.pop()
     }
   }

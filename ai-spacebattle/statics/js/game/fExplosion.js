@@ -4,7 +4,7 @@ class Explosion {
     this.x = x
     this.y = y
 
-    console.log('NEW EXPLOSION', x, y)
+    // console.log('NEW EXPLOSION', x, y)
     
     this.particles = []
     for (let i = 0; i < 10; i++) {
@@ -27,7 +27,7 @@ class Explosion {
   }
 
   draw (r) {
-    console.log('DRAW EXPLOSION', this.particles.length)
+    // console.log('DRAW EXPLOSION', this.particles.length)
     for (let i = 0, l = this.particles.length; i < l; i++) {
       this.particles[i].draw()
     }

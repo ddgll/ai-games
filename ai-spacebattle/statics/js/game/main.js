@@ -1,6 +1,7 @@
-const sketch = () => {
-  let frameDiv = null //document.getElementById('frame')
-  let log = null //document.getElementById('log')
+var context
+const sketch = (socket, name) => {
+  let frameDiv = null // document.getElementById('frame')
+  let log = null // document.getElementById('log')
   let containerDiv = document.getElementById('container')
   containerDiv.style.width = CONSTANTS.CANVAS_WIDTH + 'px'
   containerDiv.style.height = CONSTANTS.CANVAS_HEIGHT + 'px'
@@ -10,21 +11,19 @@ const sketch = () => {
   let backgroundDiv = document.getElementById('background')
   backgroundDiv.style.width = CONSTANTS.WIDTH + 'px'
   backgroundDiv.style.height = CONSTANTS.HEIGHT + 'px'
-  let move = true, context, socket, mouse, hold = false
+  let move = true, mouse, hold = false
   return (p) => {
     p.setup = function () {
       p.noStroke()
       p.createCanvas(CONSTANTS.CANVAS_WIDTH, CONSTANTS.CANVAS_HEIGHT)
       p.frameRate(CONSTANTS.FRAME_RATE)
       p.noLoop()
-      socket = io()
-      socket.on('connection', function () {
-        console.log('Connected')
-      })
+
       socket.on('f', function (data) {
         context = new Context(data, p, log)
       })
       socket.on('c', function (ctx) {
+        if (!context) return
         if (context.fromRemote(ctx)) p.loop()
       })
     }
@@ -41,6 +40,7 @@ const sketch = () => {
     }
 
     p.keyPressed = function () {
+      console.log('KEY PREE', p.keyCode)
       if (p.keyCode === 85) {
         socket.emit('u')
       } else if (p.keyCode === 83) {
@@ -54,26 +54,26 @@ const sketch = () => {
       }
     }
 
-    p.touchMoved = function () {
-      console.log(p.touches)
-      if (p.touches.length > 1) {
-        socket.emit('c', [p.touches[0].x,p.touches[0].y])  
-      }
-      if (p.touches.length > 0) {
-        move(p.touches[0].x, p.touches[0].y)
-      }
-    }
+    // p.touchMoved = function () {
+    //   // console.log(p.touches)
+    //   if (p.touches.length > 1) {
+    //     socket.emit('c', [p.touches[0].x,p.touches[0].y])  
+    //   }
+    //   if (p.touches.length > 0) {
+    //     moveShip(p.touches[0].x, p.touches[0].y)
+    //   }
+    // }
 
     p.mouseClicked = function () {
-      // console.log('MOUSE CLICKED')
+      if (!context) return
       socket.emit('c', [p.mouseX,p.mouseY])
     }
 
     p.mouseMoved = function () {
-      move(p.mouseX, p.mouseY)
+      moveShip(p.mouseX, p.mouseY)
     }
 
-    function move (x_, y_) {
+    function moveShip (x_, y_) {
       if (!context || !context.me || x_ > p.width || x_ < 0 || y_ > p.height || y_ < 0 || !move || p.keyIsDown(65)) return
       const me = context.me
       const x = Math.round(x_)
@@ -97,8 +97,142 @@ const sketch = () => {
     }
   }
 }
+
+const minimap = () => {
+  const getMinimapCoords = (x, y) => {
+    return { x: x / CONSTANTS.MINIMAP_SCALE, y: y / CONSTANTS.MINIMAP_SCALE }
+  }
+
+  const getMinimapProportion = (x) => {
+    return (x / CONSTANTS.MINIMAP_SCALE)
+  }
+
+  const updateMinimap = () => {
+    let coords = getMinimapCoords(this.hero.x, this.hero.y)
+  }
+
+  return (p) => {
+    p.setup = function () {
+      const div = document.getElementById('minimap')
+      const WIDTH = Math.round(CONSTANTS.WIDTH / CONSTANTS.MINIMAP_SCALE)
+      const HEIGHT = Math.round(CONSTANTS.HEIGHT / CONSTANTS.MINIMAP_SCALE)
+      div.style.width = WIDTH + 'px'
+      div.style.height = HEIGHT + 'px'
+      p.noStroke()
+      p.createCanvas(WIDTH, HEIGHT)
+      p.frameRate(CONSTANTS.FRAME_RATE)
+    }
+      
+    p.draw = function () {
+      p.clear()
+      p.background(125, 125)
+      p.fill(255, 255, 255, 255)
+      if (context && context.planets && context.ships && typeof context.ships[context.me.id] !== 'undefined') {
+        const planets = context.planets
+        const hero = context.ships[context.me.id]
+        let item, radius, coords, owner, challenge, challenger
+        for(let id in planets) {
+          item = planets[id]
+          challenge = item.challenge
+          challenger = item.challenger
+          radius = getMinimapProportion(item.r)
+          coords = getMinimapCoords(item.x, item.y)
+          owner = parseInt(item.context.o)
+          p.push()
+          if (owner === hero.id) {
+            p.fill(100, 200, 100, 255)
+          } else if (!isNaN(owner)) {
+            p.fill(200, 100, 100, 255)
+          } else {
+            p.fill(125, 125, 125, 255)
+          }
+          p.ellipse(coords.x, coords.y, radius, radius)
+          p.pop()
+          if (challenge) {
+            const angle = challenge * 2 * Math.PI / 100
+            p.push()
+            p.translate(coords.x, coords.y)
+            if (challenger === hero.id) {
+              p.fill(0, 255, 0, 125)
+            } else {
+              if (owner === hero.id) {
+                p.noFill()
+                p.strokeWeight(1)
+                p.stroke(255, 255, 0)
+                p.ellipse(0, 0, radius, radius)
+                p.noStroke()
+              }
+              p.fill(255, 255, 0, 125)
+            }
+            p.arc(0, 0, radius, radius, Math.PI, Math.PI + angle)
+            p.pop()
+          }
+        }
+        if (context.bounds) {
+          const cMin = getMinimapCoords(context.bounds.xMin + CONSTANTS.PLANET_MAX_RADIUS, context.bounds.yMin + CONSTANTS.PLANET_MAX_RADIUS)
+          const cMax = getMinimapCoords(context.bounds.xMax - CONSTANTS.PLANET_MAX_RADIUS, context.bounds.yMax - CONSTANTS.PLANET_MAX_RADIUS)
+          p.push()
+          p.noFill()
+          p.stroke(255, 50)
+          p.rect(cMin.x, cMin.y, cMax.x - cMin.x, cMax.y - cMin.y)
+          p.pop()
+        }
+        coords = getMinimapCoords(hero.x, hero.y)
+        const size = getMinimapProportion(CONSTANTS.SHIP_SIZE)
+        const a = parseInt(hero.context.a)
+        p.push()
+        p.translate(coords.x, coords.y)
+        p.rotate(a)
+        p.triangle(-size/2, 0, size/2, 0, 0, size)
+        p.pop()
+      }
+    }
+  }
+}
 function init () {
-  new p5(sketch(), 'game')
+  const socket = io()
+  let context
+  const form = document.getElementById('form')
+  const container = document.getElementById('container')
+  const btn = document.getElementById('go')
+  const nameInput = document.getElementById('name')
+
+  const go = (name) => {
+    form.style.display = 'none'
+    container.style.display = 'block'
+    launchGame(socket, name)
+    socket.emit('s', name)
+  }
+
+  btn.addEventListener('click', () => {
+    const name = nameInput.value
+    if (!name || !name.length) {
+      alert('Please enter a name')
+    } else {
+      go(name)
+    }
+  })
+
+  nameInput.addEventListener('keyup', (ev) => {
+    const name = nameInput.value.replace(/\|/g, '')
+    nameInput.value = name
+    if (name.length > 10) nameInput.value = name.slice(0, 10)
+    if (ev.keyCode === 13) go(name)
+  })
+
+  socket.on('connect', function () {
+    setTimeout(() => {
+      const name = nameInput.value
+      if (form.style.display === 'none' && name.length) {
+        socket.emit('s', name)
+      }
+    }, 3000)
+  })
+}
+
+function launchGame(socket, name) {
+  new p5(sketch(socket, name), 'game')
+  new p5(minimap(), 'minimap')
 }
 
 function sqr(a) {

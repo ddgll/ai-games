@@ -11,11 +11,11 @@ class Context {
     this.me = data.ship
     for (let i = 0, l = data.context.s.length, s; i < l; i++) {
       s = data.context.s[i]
-      this.ships[s.id] = new Ship(s.id, { x: s.x, y: s.y, a: s.a, l: s.l, s: s.s }, this.renderer, log)
+      this.ships[s.id] = new Ship(s.id, s.n, { x: s.x, y: s.y, a: s.a, l: s.l, s: s.s }, this.renderer, log)
     }
     for (let i = 0, l = data.context.p.length, p; i < l; i++) {
       p = data.context.p[i]
-      this.planets[p.id] = new Planet(p.id, { x: p.x, y: p.y, r: p.r}, this.renderer, log)
+      this.planets[p.id] = new Planet(p.id, { x: p.x, y: p.y, r: p.r, o: p.o, c: p.c, cl: p.cl}, this.renderer, log)
     }
     for (let i = 0, l = data.context.a.length, a; i < l; i++) {
       a = data.context.a[i]
@@ -29,7 +29,12 @@ class Context {
   }
 
   setBounds (x, y) {
-    this.bounds = { xMin: 0-x-CONSTANTS.PLANET_MAX_RADIUS+2, yMin: 0-y-CONSTANTS.PLANET_MAX_RADIUS+2, xMax: CONSTANTS.CANVAS_WIDTH-x-2+CONSTANTS.PLANET_MAX_RADIUS, yMax: CONSTANTS.CANVAS_HEIGHT-y-2+CONSTANTS.PLANET_MAX_RADIUS}
+    this.bounds = {
+      xMin: 0-x-CONSTANTS.PLANET_MAX_RADIUS+2,
+      yMin: 0-y-CONSTANTS.PLANET_MAX_RADIUS+2,
+      xMax: CONSTANTS.CANVAS_WIDTH-x-2+CONSTANTS.PLANET_MAX_RADIUS,
+      yMax: CONSTANTS.CANVAS_HEIGHT-y-2+CONSTANTS.PLANET_MAX_RADIUS
+    }
   }
 
   debug (msg, flush) {
@@ -73,14 +78,16 @@ class Context {
     // return
     const me = this.me
     let s
-    for (let id in this.ships) {
-      s = this.ships[id]
-      if (me.id === s.id) {
-        me.x = s.context.x
-        me.y = s.context.y
-        me.s = s.context.s
-        me.l = s.context.l
-        break;
+    if (me) {
+      for (let id in this.ships) {
+        s = this.ships[id]
+        if (me.id === s.id) {
+          me.x = s.context.x
+          me.y = s.context.y
+          me.s = s.context.s
+          me.l = s.context.l
+          break;
+        }
       }
     }
     if (frameDiv) {
@@ -89,22 +96,15 @@ class Context {
         frameDiv.innerHTML += `<h2>(${me.x}, ${me.y})</h2>`
       }
     }
+    this.renderer.push()
     if (me) {
       let x = (CONSTANTS.CANVAS_WIDTH / 2)-me.x
       let y = (CONSTANTS.CANVAS_HEIGHT / 2)-me.y
+      if (x > 0) x = 0
+      if (x < -(CONSTANTS.WIDTH - CONSTANTS.CANVAS_WIDTH)) x = -(CONSTANTS.WIDTH - CONSTANTS.CANVAS_WIDTH)
+      if (y > 0) y = 0
+      if (y < -(CONSTANTS.HEIGHT - CONSTANTS.CANVAS_HEIGHT)) y = -(CONSTANTS.HEIGHT - CONSTANTS.CANVAS_HEIGHT)
       this.setBounds(x, y)
-      this.renderer.text(`Score: ${me.s}`, 10, 20)
-      this.renderer.text(`Vie: ${me.l}%`, 10, 40)
-      const leader = []
-      let sh
-      for (let i in this.ships) {
-        sh = this.ships[i]
-        leader.push({ id: s.id, score: s.context.s })
-      }
-      leader.sort((a, b) => b.score - a.score)
-      for (let i = 0, l = leader.length > 5 ? 5 : leader.length; i < l; i++) {
-        this.renderer.text(`${i+1} - ${leader[i].id}: ${leader[i].score}`, CONSTANTS.CANVAS_WIDTH - 100, 20*(i+1))
-      }
       this.renderer.translate(x, y)
     }
     this.renderer.stroke(255, 255, 255, 150)
@@ -113,6 +113,7 @@ class Context {
     this.renderer.rect(0, 0, CONSTANTS.WIDTH, CONSTANTS.HEIGHT)
     this.renderer.rect(this.bounds.xMin, this.bounds.yMin, this.bounds.xMax - this.bounds.xMin, this.bounds.yMax - this.bounds.yMin)
     this.renderer.noStroke()
+    let nb = 0
     for (let id in this.ships) {
       s = this.ships[id]
       if (this.onScreen(s.context.x, s.context.y)) s.draw(me)
@@ -123,7 +124,8 @@ class Context {
     }
     for (let id in this.planets) {
       s = this.planets[id]
-      if (this.onScreen(s.context.x, s.context.y)) s.draw(me)
+      if (me && s.owner === me.id) nb++
+      if (this.onScreen(s.context.x, s.context.y)) s.draw(me, this.ships)
     }
     for (let id in this.asteroids) {
       s = this.asteroids[id]
@@ -131,6 +133,26 @@ class Context {
     }
     for (let i = 0, l = this.explosions.length, s; i < l; i++) {
       this.explosions[i].draw()
+    }
+    this.renderer.pop()
+    if (me) {
+      this.renderer.text(`Score: ${Math.round(me.s)}`, 10, 20)
+      this.renderer.text(`Vie: ${me.l}%`, 10, 40)
+      const leader = []
+      let sh
+      for (let i in this.ships) {
+        sh = this.ships[i]
+        leader.push({ name: sh.name, score: sh.context.s })
+      }
+      leader.sort((a, b) => b.score - a.score)
+      for (let i = 0, l = leader.length > 5 ? 5 : leader.length; i < l; i++) {
+        this.renderer.text(`${i+1} - ${leader[i].name}: ${Math.round(leader[i].score)}`, CONSTANTS.CANVAS_WIDTH - 100, 20*(i+1))
+      }
+      if (nb) {
+        this.renderer.text(`Planet${nb > 1 ? 's' : ''}: ${nb}`, 10, 60)
+      } else {
+        this.renderer.text(`No planet`, 10, 60)
+      }
     }
   }
 
@@ -175,39 +197,43 @@ class Context {
         })
       }
     }
-    if (typeof this.ships[this.me.id] !== 'undefined') this.me = this.ships[this.me.id]
+    if (this.me && this.me.id && typeof this.ships[this.me.id] !== 'undefined') this.me = this.ships[this.me.id]
   }
   
   updateShip (data) {
     const type = data[1]
     const id = data[2]
-    this.debug('Update ship! <pre>' + JSON.stringify(data, null, true) + '</pre>', true)
+    const meid = this.me && this.me.id ? this.me.id : null
+    // this.debug('Update ship! <pre>' + JSON.stringify(data, null, true) + '</pre>', true)
     switch (type) {
       case 'a': {
-        if (data.length === 8) {
-          const x = data[3]
-          const y = data[4]
-          const a = data[5]
-          const l = data[6]
-          const s = data[7]
+        if (data.length === 10) {
+          const n = data[3]
+          const x = data[4]
+          const y = data[5]
+          const a = data[6]
+          const l = data[7]
+          const s = data[8]
+          const g = data[9]
           if (typeof this.ships[id] === 'undefined') {
-            this.ships[id] = new Ship(id, { x, y, a, s, l }, this.renderer, this.log, this.me.id)
+            this.ships[id] = new Ship(id, n, { x, y, a, s, l, g }, this.renderer, this.log, meid)
             this.debug('Add ship ' + id)
           }
         }
       }
       case 'm': {
-        if (data.length === 8) {
+        if (data.length === 9) {
           const x = data[3]
           const y = data[4]
           const a = data[5]
           const l = data[6]
           const s = data[7]
+          const g = data[8]
           if (typeof this.ships[id] !== 'undefined') {
-            this.ships[id].update({ x, y, a, s, l })
+            this.ships[id].update({ x, y, a, s, l, g })
             // this.debug('Update ship ' + id, true)
           } else {
-            this.ships[id] = new Ship(id, { x, y, a, s, l }, this.renderer, this.log, this.me.id)
+            this.ships[id] = new Ship(id, 'John Doe', { x, y, a, s, l, g }, this.renderer, this.log, meid)
             this.debug('Add ship ' + id)
           }
         }

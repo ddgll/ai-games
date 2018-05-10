@@ -6,6 +6,11 @@
 #game {
   position: relative;
 }
+#minimap {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+}
 
 #frame {
   position: fixed;
@@ -24,4 +29,12 @@
 #background {
   position: absolute;
   background: url(/images/background.png) repeat center center transparent;
+}
+
+#first {
+  position: fixed;
+  top: 0;
+  left: 0;
+  color: white;
+  background: transparent;
 }

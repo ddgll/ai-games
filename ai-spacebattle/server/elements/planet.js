@@ -42,42 +42,51 @@ module.exports = class Planet extends Element {
   }
 
   update (planets, ships) {
-    let minimum = Infinity, target = null, nb = 0
+    let minimum = Infinity, target = null, nb = 0, challenger = null
     for (let i = 0, l = ships.length, x, y, s, d; i < l; i++) {
       s = ships[i]
-      if (s.id === this.owner) continue
       x = s.x
       y = s.y
       d = Maths.distance(this.x, this.y, x, y)
       if (d < this.view) {
-        nb++
         if (d < minimum) {
           minimum = d
           target = s
         }
+        if (d < this.view / 2) {
+          if (nb === 0) challenger = s
+          nb++
+        }
       }
     }
     if (this.btimer > 0) this.btimer--
-    if (target !== null) {
+    if (target !== null && this.owner !== target.id) {
       this.shoot(target)
-      if (nb === 1) {
-        if (this.challenger !== target.id) {
-          this.challenger = target.id
-          this.challenge = 0
-        } else {
-          this.challenge++
-        }
+    }
+    if (nb === 1) {
+      if (this.challenge > 0 && this.owner === challenger.id) {
+        challenger.score++
+        this.challenge--
+      } else if (this.challenger !== challenger.id) {
+        this.challenger = challenger.id
+        this.challenge = 0
+      } else if (challenger.collide === 0 && challenger.god === 0) {
+        challenger.score++
+        this.challenge++
       }
     }
     if (this.challenge == 100) {
       this.owner = this.challenger
       this.ownership = ships.find(s => s.id === this.owner)
+      for (let i = 0, l = this.bullets.length, b; i < l; i++) {
+        this.bullets[i].owner = 's' + this.owner
+      }
       this.challenger = null
       this.challenge = 0
     }
     for (let i = 0, l = this.bullets.length, b; i < l; i++) {
       this.bullets[i].update(planets, ships)
     }
-    if (this.ownership) this.ownership.score += 1
+    if (this.ownership) this.ownership.score += .1
   }
 }

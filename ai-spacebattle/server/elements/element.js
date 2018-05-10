@@ -52,16 +52,31 @@ module.exports = class Element {
   }
 
   gravitateTo (p) {
-		var dx = p.x - this.x,
-			dy = p.y - this.y,
-			distSQ = dx * dx + dy * dy,
-			dist = Math.sqrt(distSQ),
-			force = p.mass / distSQ,
-			ax = dx / dist * force,
-			ay = dy / dist * force;
+		
 
-		this.vel.x += ax;
-		this.vel.y += ay;
+		if (p.repulse) {
+			var dx = p.x - this.x,
+					dy = p.y - this.y,
+					distSQ = dx * dx + dy * dy,
+					dist = Math.sqrt(distSQ),
+					force = p.mass / distSQ,
+					ax = dx / dist * force,
+					ay = dy / dist * force;
+			if (dist < CONSTANTS.PLANET_MAX_RADIUS / 1.5) {
+				this.vel.x -= ax * Math.random();
+				this.vel.y -= ay * Math.random();
+			}
+		} else {
+			var dx = p.x - this.x,
+					dy = p.y - this.y,
+					distSQ = dx * dx + dy * dy,
+					dist = Math.sqrt(distSQ),
+					force = p.mass / distSQ,
+					ax = dx / dist * force,
+					ay = dy / dist * force;
+			this.vel.x += ax;
+			this.vel.y += ay;
+		}
   }
   
   addSpring (point, k, length) {

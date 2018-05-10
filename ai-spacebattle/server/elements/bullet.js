@@ -69,8 +69,9 @@ module.exports = class Bullet extends Element {
       y = s.y
       if (this.shipCollide(x, y, CONSTANTS.SHIP_SIZE)) {
         this.life = 0
-        s.life -= 10
-        s.collide = 5
+        s.setCollide(0, 10)
+        const ownership = ships.find(s => 's' + s.id === this.owner)
+        if (ownership) ownership.score += s.life > 0 ? 10 : 100
         break
       } else {
         // console.log('SHIP NOT COLLLLLIIIIIDE !!!!!')

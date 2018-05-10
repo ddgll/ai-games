@@ -11,7 +11,7 @@ function Pipe () {
 
   this.x = width
   this.width = random(30, 80)
-  this.speed = 2.5
+  this.speed = 3
 
   this.show = function () {
     stroke(255)

@@ -20,6 +20,7 @@ var options = {
 app.use(express.static('statics', options))
 
 app.get('/', (req, res) => res.sendFile(path.resolve('./index.html')))
+app.get('/spectate', (req, res) => res.sendFile(path.resolve('./spectate.html')))
 
 io.on('connection', realtime(io))
 

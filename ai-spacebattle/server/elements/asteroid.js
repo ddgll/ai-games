@@ -23,7 +23,7 @@ module.exports = class Asteroid extends Element {
 
     for (let i = 0, l = planets.length, p; i < l; i++) {
       p = planets[i]
-      this.addGravitation({ x: p.x, y: p.y, mass: p.mass })
+      this.addGravitation({ x: p.x, y: p.y, mass: p.mass, repulse: true })
     }
 
     do {
@@ -32,14 +32,19 @@ module.exports = class Asteroid extends Element {
   }
 
   update (ships) {
+    super.update()
     for (let i = 0, l = ships.length, x, y, s; i < l; i++) {
       s = ships[i]
       x = s.x
       y = s.y
       if (this.shipCollide(x, y, CONSTANTS.SHIP_SIZE)) {
-        s.collide = 5
+        s.setCollide(5, 2)
         break
       }
+    }
+    if (Maths.magnitude(this.vel.x, this.vel.y) > CONSTANTS.ASTEROID_MAX_SPEED) {
+      const tmp = Maths.magnitude(this.vel.x, this.vel.y, CONSTANTS.ASTEROID_MAX_SPEED)
+      this.vel = Maths.magnitude(this.vel.x, this.vel.y, CONSTANTS.ASTEROID_MAX_SPEED)
     }
     this.x += this.vel.x
     this.y += this.vel.y
@@ -52,6 +57,9 @@ module.exports = class Asteroid extends Element {
       this.y = -this.radius
     } else if (this.y < -this.radius) {
       this.y = CONSTANTS.HEIGHT + this.radius
+    }
+    while (this.vel.x === 0 && this.vel.y === 0) {
+      this.vel = { x: Math.random() * (Maths.randomInt(1, 4) - 3), y: Math.random() * (Maths.randomInt(1, 4) - 3) }
     }
   }
 

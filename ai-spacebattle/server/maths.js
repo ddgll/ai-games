@@ -64,6 +64,15 @@ const norm = (value, min, max) => {
   return (value - min) / (max - min);
 }
 
+const magnitude = (x, y, length) => {
+  if (length) {
+    const angle = angleBetween(0, 0, x, y)
+    return { x: Math.cos(angle) * length, y: Math.sin(angle) * length }
+  } else {
+    return Math.sqrt(x * x + y * y) 
+  }
+}
+
 module.exports = {
   sqr,
   distance,
@@ -75,5 +84,6 @@ module.exports = {
   inRange,
   lerp,
   map,
-  norm
+  norm,
+  magnitude
 }

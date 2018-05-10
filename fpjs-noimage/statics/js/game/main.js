@@ -95,7 +95,7 @@ function setup () {
   })
 
   slider = createSlider(1, 100, 1)
-  sliderm = createSlider(1, 20, 10)
+  sliderm = createSlider(1, 20, 1)
   const saved = localStorage.getItem('bestbrain')
   const bsaved = localStorage.getItem('bestscore')
   let brain

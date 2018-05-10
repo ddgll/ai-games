@@ -35,7 +35,7 @@ function Bird (dadBrain, momBrain, best) {
 
   this.resistence = 1
   this.gravity = 3
-  this.lift = -12
+  this.lift = -10
   if (this.debug) {
     this.gravity = 0.1
     this.lift = -5

@@ -11,7 +11,7 @@ module.exports = class Game {
       width: this.width,
       height: this.height,
       nbFlushMemmory: 3
-    })
+    }, io)
     this.frameRate = options && options.frameRate ? options.frameRate : CONSTANTS.FRAME_RATE
     this.intervalMilli = Math.round(1000 / this.frameRate)
     this.intervalEmit = (this.intervalMilli / 2)
@@ -27,6 +27,7 @@ module.exports = class Game {
       // const d = new Date().getTime()
       this.context.update()
       // const f = new Date().getTime()
+      // console.log('UPDATE Time:', f - d, 'ms')
     }
     this.context.update()
 
@@ -34,8 +35,8 @@ module.exports = class Game {
     this.intervalEmit = setInterval(emit, this.intervalEmit)
   }
 
-  addShip () {
-    const ship = this.context.addShip()
+  addShip (name) {
+    const ship = this.context.addShip(name)
     const context = this.context.getContext()
     return { ship, context }
   }
