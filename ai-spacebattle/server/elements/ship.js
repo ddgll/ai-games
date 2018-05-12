@@ -143,7 +143,7 @@ module.exports = class Ship extends Element {
       nbObs / this.nbSensors // 6
     ].concat(inputs)
     // clear()
-//     console.log(JSON.stringify(inputs, null, 2), inputs.length)
+    // console.log(JSON.stringify(inputs, null, 2), inputs.length)
     let th = true
     inputs.forEach((i, idx) => {
       if (i < 0 || i > 1) {
