@@ -1,15 +1,18 @@
+'use strict';
 
 const Game = require('./game')
 const Ga = require('./ga')
 
-var game, ga
-
 module.exports = function (io) {
+
+  var game, ga
+
   if (!game) {
     game = new Game(io)
-    ga = new Ga(game, 46, 3)
+    ga = new Ga(game, 46, 9, io)
     game.context.setGameOver(ga.endEvolution.bind(ga))
     ga.startEvolution()
+    // game.startIntervals()
   }
   
   return function (socket) {
@@ -42,6 +45,15 @@ module.exports = function (io) {
 
     socket.on('c', ([x, y]) => {
       game.shoot(id, x, y)
+    })
+
+    socket.on('b', () => {
+      if (ga && ga.bestBrain) socket.emit('brain', ga.bestBrain)
+    })
+
+    socket.on('h', (bool) => {
+      console.log('SET HUMAN', bool)
+      game.setHuman(bool)
     })
 
     // socket.on('u', () => {

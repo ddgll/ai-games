@@ -1,6 +1,6 @@
 class Context {
   constructor (data, p, log) {
-    console.log('FIRST Context', data)
+    // console.log('FIRST Context', data)
     this.renderer = p
     this.buffer = []
     this.ships = {}
@@ -11,7 +11,7 @@ class Context {
     this.me = data.ship
     for (let i = 0, l = data.context.s.length, s; i < l; i++) {
       s = data.context.s[i]
-      this.ships[s.id] = new Ship(s.id, s.n, { x: s.x, y: s.y, a: s.a, l: s.l, s: s.s }, this.renderer, log)
+      this.ships[s.id] = new Ship(s.id, s.n, { x: s.x, y: s.y, a: s.a, l: s.l, s: s.s, d: s.d }, this.renderer, log)
     }
     for (let i = 0, l = data.context.p.length, p; i < l; i++) {
       p = data.context.p[i]
@@ -20,6 +20,10 @@ class Context {
     for (let i = 0, l = data.context.a.length, a; i < l; i++) {
       a = data.context.a[i]
       this.asteroids[a.id] = new Asteroid(a.id, { x: a.x, y: a.y, v: a.v}, this.renderer, log)
+    }
+    for (let i = 0, l = data.context.b.length, b; i < l; i++) {
+      b = data.context.b[i]
+      this.bullets[b.id] = new Bullet(b.id, { x: b.x, y: b.y, o: b.o }, this.renderer, this.log)
     }
     this.explosions = []
     this.id = data.context.id
@@ -68,14 +72,6 @@ class Context {
   }
 
   draw (frameDiv, bgDiv) {
-    // if (!this.ex) {
-    //   this.ex = new Explosion(CONSTANTS.CANVAS_WIDTH / 2, CONSTANTS.CANVAS_HEIGHT / 2, this.renderer)
-    // } else {
-    //   this.ex.update()
-    //   this.ex.draw()
-    //   if (this.ex.particles.length === 0) this.ex = null
-    // }
-    // return
     const me = this.me
     let s
     if (me) {

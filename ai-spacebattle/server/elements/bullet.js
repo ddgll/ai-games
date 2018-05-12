@@ -1,3 +1,5 @@
+'use strict';
+
 const Element = require('./element')
 const Maths = require('../maths')
 const CONSTANTS = require('../../statics/js/constants')
@@ -47,9 +49,12 @@ module.exports = class Bullet extends Element {
         this.vel.y = Math.sin(a) * this.speed / 2
       }
     }
+
     this.x += this.vel.x
     this.y += this.vel.y
-    
+    if (Maths.magnitude(this.vel.x, this.vel.y) > CONSTANTS.BULLET_SPEED) {
+      this.vel = Maths.magnitude(this.vel.x, this.vel.y, CONSTANTS.BULLET_SPEED)
+    }
     if (this.worldCollide()) this.life = 0
 
     for (let i = 0, l = planets.length, x, y, r, p; i < l; i++) {

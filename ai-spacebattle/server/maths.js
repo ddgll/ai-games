@@ -1,3 +1,5 @@
+'use strict';
+
 const sqr = (a) => {
   const qr = a * a
   return qr

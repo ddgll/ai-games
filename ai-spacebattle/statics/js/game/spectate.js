@@ -10,13 +10,13 @@ const sketch = (socket, name) => {
   backgroundDiv.style.width = CONSTANTS.WIDTH + 'px'
   backgroundDiv.style.height = CONSTANTS.HEIGHT + 'px'
   let firstDiv = document.getElementById('first')
-  let move = true, mouse, hold = false, xCenter, yCenter
+  let move = true, mouse, best, hold = false, xCenter, yCenter, nb = 0, distances = []
   return (p) => {
     p.setup = function () {
+      p.simul = true
       p.noStroke()
       const canvas = p.createCanvas(CONSTANTS.CANVAS_WIDTH, CONSTANTS.CANVAS_HEIGHT)
-      p.frameRate(CONSTANTS.FRAME_RATE)
-      p.noLoop()
+      p.frameRate(30)
 
       xCenter = CONSTANTS.CANVAS_WIDTH / 2
       yCenter = CONSTANTS.CANVAS_HEIGHT / 2
@@ -25,15 +25,34 @@ const sketch = (socket, name) => {
         context = new Context(data, p)
         context.setBounds(xCenter, yCenter)
       })
-      socket.on('c', function (ctx) {
-        if (!context) return
-        if (context.fromRemote(ctx)) p.loop()
+      socket.on('nb', function (nb_) {
+        nb = nb_
+      })
+      socket.on('best', function (nb_) {
+        best = nb_
+      })
+      socket.on('brain', function (json) {
+        console.log('BRAIN', json)
+        const brain = neataptic.Network.fromJSON(json)
+        let svg = document.getElementById('brain')
+        WIDTH = CONSTANTS.WIDTH
+        HEIGHT = CONSTANTS.HEIGHT
+        svg.setAttribute('width', CONSTANTS.WIDTH + 'px')
+        svg.setAttribute('height', CONSTANTS.HEIGHT + 'px')
+        // svg.setAttribute('viewBox', (CONSTANTS.HEIGHT - CONSTANTS.WIDTH) + ' 0 ' + CONSTANTS.WIDTH + ' ' + CONSTANTS.HEIGHT)
+        svg.setAttribute('viewBox', '-400 -' + CONSTANTS.HEIGHT * 0.5 + ' ' + CONSTANTS.WIDTH * 1.2 + ' ' + CONSTANTS.HEIGHT * 1.2)
+        svg.style.display = 'block'
+        drawGraph(brain.graph(CONSTANTS.WIDTH, CONSTANTS.HEIGHT), '#brain')
       })
 
       socket.on('first', function (id) {
         if (typeof context.ships[id] !== 'undefined') {
           first = context.ships[id]
-          firstDiv.innerHTML = '<h1>First: ' + first.name + ' => ' + Math.round(first.context.s) + ' <small>(' + first.context.l + ')</small></h1>'
+          firstDiv.innerHTML = '<h4>First: ' + first.name + ' => Score: ' + Math.round(first.context.s) + '  Distance: ' + Math.round(first.context.d * 100) + ' <small>(' + nb + ')</small></h4>'
+          if (best) {
+            firstDiv.innerHTML += '<h1>Best score: ' + best + '</h1>' 
+          }
+          distances.push(first.context.d)
         }
       })
     }
@@ -59,9 +78,19 @@ const sketch = (socket, name) => {
         if (yCenter > 15) yCenter = 15
         if (yCenter < -(CONSTANTS.HEIGHT - CONSTANTS.CANVAS_HEIGHT + 15)) yCenter = -(CONSTANTS.HEIGHT - CONSTANTS.CANVAS_HEIGHT + 15)
         context.setBounds(xCenter, yCenter)
-        context.update()
         p.translate(xCenter, yCenter)
         context.draw()
+      }
+    }
+
+    p.keyPressed = function () {
+      console.log(p.keyCode)
+      if (p.keyCode === 72) { // h
+        socket.emit('h', true)
+      } else if (p.keyCode === 85) {// u
+        socket.emit('h', false)
+      } else if (p.keyCode === 66) {// b
+        socket.emit('b')
       }
     }
   }
@@ -80,10 +109,11 @@ function init () {
   const scaleY = y / CONSTANTS.HEIGHT
   
   scale = scaleX > scaleY ? scaleY : scaleX
+  if (scale > 1) scale = 0.8
+  console.log('SCALE', scale)
   
   CONSTANTS.CANVAS_WIDTH = CONSTANTS.WIDTH
   CONSTANTS.CANVAS_HEIGHT = CONSTANTS.HEIGHT
-  console.log(CONSTANTS)
   const socket = io()
   socket.on('connect', function () {
     socket.emit('spectate')

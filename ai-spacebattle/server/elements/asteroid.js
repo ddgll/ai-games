@@ -1,3 +1,5 @@
+'use strict';
+
 const Element = require('./element')
 const Maths = require('../maths')
 const Bullet = require('./bullet')
@@ -43,7 +45,6 @@ module.exports = class Asteroid extends Element {
       }
     }
     if (Maths.magnitude(this.vel.x, this.vel.y) > CONSTANTS.ASTEROID_MAX_SPEED) {
-      const tmp = Maths.magnitude(this.vel.x, this.vel.y, CONSTANTS.ASTEROID_MAX_SPEED)
       this.vel = Maths.magnitude(this.vel.x, this.vel.y, CONSTANTS.ASTEROID_MAX_SPEED)
     }
     this.x += this.vel.x

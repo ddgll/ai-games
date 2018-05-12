@@ -1,3 +1,5 @@
+'use strict';
+
 const Element = require('./element')
 const Maths = require('../maths')
 const Bullet = require('./bullet')
@@ -22,7 +24,7 @@ module.exports = class Planet extends Element {
     this.challenge = 0
 
     this.bullets = []
-    for (let j = 1, b; j <= CONSTANTS.BULLET_COUNT; j++) {
+    for (let j = 1, b; j <= CONSTANTS.PLANET_BULLET_COUNT; j++) {
       b = new Bullet(id + '-p-' + j, 'p' + id)
       this.bullets.push(b)
     }
@@ -63,7 +65,7 @@ module.exports = class Planet extends Element {
     if (target !== null && this.owner !== target.id) {
       this.shoot(target)
     }
-    if (nb === 1) {
+    if (nb === 1 || (!CONSTANTS.SHIP_SEE_SHIP && nb >= 1)) {
       if (this.challenge > 0 && this.owner === challenger.id) {
         challenger.score++
         this.challenge--

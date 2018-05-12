@@ -9,6 +9,7 @@
   "author": "grilldotcom@gmail.com",
   "license": "ISC",
   "dependencies": {
+    "clear": "^0.1.0",
     "express": "^4.16.3",
     "neataptic": "^1.4.7",
     "nodemon": "^1.17.3",

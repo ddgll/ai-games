@@ -15,6 +15,7 @@ class Ship extends Element {
     const a = parseFloat(this.context.a) - Math.PI / 2
     const l = parseInt(this.context.l)
     const s = parseInt(this.context.s)
+    const d = parseInt(this.context.d)
     const g = parseInt(this.context.g)
     if (l > 0) {
       const alpha = g === 1 ? 50 : 255
@@ -32,9 +33,11 @@ class Ship extends Element {
       r.strokeWeight(1)
       r.noFill()
       r.rect(x - CONSTANTS.SHIP_SIZE, y + CONSTANTS.SHIP_SIZE, CONSTANTS.SHIP_SIZE * 2, 4)
-      const length = this.name.length * 3
+      const length = r.simul ? (String(d).length * 3) : (this.name.length * 3)
+      const name = r.simul ? d : this.name
       r.strokeWeight(0.5)
-      r.text(this.name, x - length, y + CONSTANTS.SHIP_SIZE + 20)
+      // r.text(this.name, x - length, y + CONSTANTS.SHIP_SIZE + 20)
+      r.text(name, x - length, y + CONSTANTS.SHIP_SIZE + 20)
       r.pop()
       r.translate(x, y)
       r.rotate(a)

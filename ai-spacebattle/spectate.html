@@ -2,7 +2,12 @@
 <html>
   <head>
     <title>ai-spacebattle</title>
+    <script>var WIDTH, HEIGHT;</script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.0/socket.io.js"></script>
+    <script src="/js/libraries/d3.v3.min.js"></script>
+    <script src="/js/libraries/cola.v3.min.js"></script>
+    <script src="https://wagenaartje.github.io/neataptic/cdn/1.4.7/neataptic.js"></script>
+    <script src="https://rawgit.com/wagenaartje/neataptic/master/graph/graph.js"></script>
     <script src="/js/libraries/p5/p5.min.js"></script>
     <script src="/js/constants.js"></script>
     <script src="/js/game/fExplosion.js"></script>
@@ -14,6 +19,7 @@
     <script src="/js/game/fBullet.js"></script>
     <script src="/js/game/fContext.js"></script>
     <script src="/js/game/spectate.js"></script>
+    <link rel="stylesheet" type="text/css" href="/js/libraries/neataptic/graph.css">
     <link rel="stylesheet" type="text/css" href="/css/styles.css" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
   </head>
@@ -23,6 +29,6 @@
       <div id="game"></div>
     </div>
     <div id="first"></div>
-    <svg class="svg" width="600px" height="400px" viewBox="200 0 600 400"/>
+    <svg id="brain" style="display: none;" ondblclick="this.style.display = 'none'"/>
   </body>
 </html>
