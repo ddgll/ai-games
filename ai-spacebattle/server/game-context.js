@@ -91,7 +91,7 @@ module.exports = class GameContext {
     }
     for (let i = 0, l = this.asteroids.length; i < l; i++) this.asteroids[i].update(this.ships)
     this.ships = this.ships.filter(s => s.life > 0)
-    if (this.ships.filter(s => s.brain !== null).length === 0 && typeof this.gameover === 'function') this.gameover()
+    if (this.ships.filter(s => s.brain !== null).length === 0 && typeof this.gameover === 'function') this.gameover(this.counter)
     // this.bullets.forEach(b => b.update())
     if (first && max > this.best && this.first != first.id) {
       this.io.emit('first', first.id)
@@ -160,7 +160,7 @@ module.exports = class GameContext {
       bullets = bullets.concat(s.bullets.filter(b => !b.dead()).map(b => {
         return { id: b.id, o: b.owner, x: b.x, y: b.y, vx: b.vel.x, vy: b.vel.y, a: b.rotation }
       }))
-      return { id: s.id, n: s.name, x: s.x, y: s.y, a: s.rotation, s: s.score, d: s.distance, l: s.life, g: (s.god > 0) ? 1 : 0 }
+      return { id: s.id, n: s.name, x: s.x, y: s.y, a: s.rotation, s: s.score, d: s.distance, l: s.life, g: (s.god > 0) ? 1 : 0, o: s.obs }
     })
     const planets = this.planets.map(p => {
       bullets = bullets.concat(p.bullets.filter(b => !b.dead()).map(b => {

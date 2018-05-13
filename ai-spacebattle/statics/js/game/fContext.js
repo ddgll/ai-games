@@ -11,7 +11,7 @@ class Context {
     this.me = data.ship
     for (let i = 0, l = data.context.s.length, s; i < l; i++) {
       s = data.context.s[i]
-      this.ships[s.id] = new Ship(s.id, s.n, { x: s.x, y: s.y, a: s.a, l: s.l, s: s.s, d: s.d }, this.renderer, log)
+      this.ships[s.id] = new Ship(s.id, s.n, { x: s.x, y: s.y, a: s.a, l: s.l, s: s.s, d: s.d, o: s.o }, this.renderer, log)
     }
     for (let i = 0, l = data.context.p.length, p; i < l; i++) {
       p = data.context.p[i]

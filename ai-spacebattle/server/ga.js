@@ -18,8 +18,8 @@ module.exports = class Ga {
     this.io = io
 
     this.popsize = options && options.popsize ? options.popsize : CONSTANTS.MAX_PLAYER
-    this.mutationRate = options && options.mutationRate ? options.mutationRate : 0.5
-    this.elitism = options && options.elitism ? options.elitism : 0.3
+    this.mutationRate = options && options.mutationRate ? options.mutationRate : 0.3
+    this.elitism = options && options.elitism ? options.elitism : 0.1
 
     try {
       this.bestBrain = JSON.parse(fs.readFileSync(this.bestname, 'utf8'))
@@ -45,7 +45,7 @@ module.exports = class Ga {
         mutationRate: this.mutationRate,
         elitism: Math.round(this.elitism * this.popsize),
         // network: new neataptic.architect.Random(this.nbInputs, this.nbInputs*2, this.nbOutputs)
-        network: new neataptic.architect.Perceptron(this.nbInputs, Math.round(this.nbInputs/2), Math.round(this.nbInputs/3), this.nbOutputs)
+        network: new neataptic.architect.Perceptron(this.nbInputs, this.nbInputs, Math.round(this.nbInputs/2), this.nbOutputs)
       }
     )
     if(population && population.length) this.neat.population = population
@@ -64,14 +64,13 @@ module.exports = class Ga {
       bot = this.game.context.addShip(nameGenerator('general'), genome)
       this.bots.push(bot)
     }
-    console.log('Start evolution with', this.bots.length, 'bots', this.neat.population.length)
     this.game.startIntervals()
   }
 
-  endEvolution(){
+  endEvolution(frames){
     this.game.stopIntervals()
     if (!this.neat) return
-    this.calculateFitness()
+    this.calculateFitness(frames)
     this.neat.sort()
   
     const bes = this.neat.getFittest()
@@ -86,35 +85,47 @@ module.exports = class Ga {
       this.io.emit('best', bs)
       fs.writeFileSync(path.resolve(name), JSON.stringify(this.bestBrain, null, 2), 'utf8')
       fs.writeFileSync(path.resolve(this.bestname), JSON.stringify(this.bestBrain, null, 2), 'utf8')
-    } else if (this.bestBrain) {
-      console.log('Generation end no best score...', bs, '(gen:', this.neat.generation, ')')
-      newPopulation.push(neataptic.Network.fromJSON(this.bestBrain))
-      newPopulation.push(neataptic.Network.fromJSON(this.bestBrain))
+    } else {
+      console.log('End evolution without best...', bs, '(gen:', this.neat.generation, ')')
     }
+
+    // Provenance
+    for(let i = 0; i < this.neat.provenance; i++){
+      if (this.bestBrain) {
+        newPopulation.push(neataptic.Network.fromJSON(this.bestBrain))
+      } else {
+        newPopulation.push(neataptic.Network.fromJSON(this.neat.template.toJSON()))
+      }
+    }
+
     // Elitism
     for(let i = 0; i < this.neat.elitism; i++){
       newPopulation.push(this.neat.population[i])
     }
+
+    this.neat.population = newPopulation
+
     // Breed the next individuals
-    for(var i = 0; i < this.neat.popsize - this.neat.elitism; i++){
-      newPopulation.push(this.neat.getOffspring())
+    for(let i = 0, l = this.neat.popsize - this.neat.elitism - this.neat.provenance; i < l; i++){
+      this.neat.population.push(this.neat.getOffspring())
     }
   
     // Replace the old population with the new population
-    this.neat.population = newPopulation
+    // this.neat.population = newPopulation
     this.neat.mutate()
   
     this.neat.generation++
     this.startEvolution()
   }
 
-  calculateFitness () {
-    let max = 3000
+  calculateFitness (frames) {
+    // let max = 10000
+    // this.bots.forEach(c => {
+    //   if (c.score > max) max = c.distance
+    // })
     this.bots.forEach(c => {
-      if (c.score > max) max = c.distance
-    })
-    this.bots.forEach(c => {
-      c.brain.score = (max > 5000) ? c.score : (c.distance / c.frames)
+      // c.brain.score = (max > 10000) ? c.score : (c.distance / c.frames)
+      c.brain.score = (c.distance / frames)
       c.brain.cId = c.id
       c.brain.cScore = c.score
       c.brain.cDistance = c.distance

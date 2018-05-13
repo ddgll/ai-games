@@ -17,6 +17,7 @@ class Ship extends Element {
     const s = parseInt(this.context.s)
     const d = parseInt(this.context.d)
     const g = parseInt(this.context.g)
+    const o = this.context.o
     if (l > 0) {
       const alpha = g === 1 ? 50 : 255
       // this.debug(`Ship : ${x}, ${y}, ${a}, ${g}`, true)
@@ -40,8 +41,28 @@ class Ship extends Element {
       r.text(name, x - length, y + CONSTANTS.SHIP_SIZE + 20)
       r.pop()
       r.translate(x, y)
+      if (o && o.length) {
+        for (let obs of o) {
+          r.push()
+          if (obs.type === 'w') {
+            r.stroke(255, 255, 0)
+          } else if (obs.type ==='p') {
+            r.stroke(0, 255, 0)
+          } else if (obs.type ==='b') {
+            r.stroke(0, 255, 255)
+          } else if (obs.type ==='s') {
+            r.stroke(0, 0, 255)
+          } else {
+            r.stroke(255, 0, 255)
+          }
+          r.line(0, 0, obs.x, obs.y)
+          r.pop()
+        }
+      }
       r.rotate(a)
       r.triangle(-CONSTANTS.SHIP_SIZE/2, 0, CONSTANTS.SHIP_SIZE/2, 0, 0, CONSTANTS.SHIP_SIZE)
+      
+      r.pop()
 
       // r.push()
       // r.stroke(255)
@@ -49,8 +70,6 @@ class Ship extends Element {
       // r.fill(255)
       // r.arc(0, 0, 100, 100, r.PI, r.PI + 1.5)
       // r.pop()
-
-      r.pop()
     }
   }
 }

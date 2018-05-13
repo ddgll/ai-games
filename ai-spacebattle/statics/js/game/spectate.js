@@ -1,4 +1,4 @@
-var context, scale, first
+var context, scale, first, debug
 const sketch = (socket, name) => {
   let containerDiv = document.getElementById('container')
   containerDiv.style.width = CONSTANTS.CANVAS_WIDTH + 'px'
@@ -13,6 +13,7 @@ const sketch = (socket, name) => {
   let move = true, mouse, best, hold = false, xCenter, yCenter, nb = 0, distances = []
   return (p) => {
     p.setup = function () {
+      debug = p
       p.simul = true
       p.noStroke()
       const canvas = p.createCanvas(CONSTANTS.CANVAS_WIDTH, CONSTANTS.CANVAS_HEIGHT)

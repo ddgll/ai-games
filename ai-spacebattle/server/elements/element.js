@@ -1,5 +1,6 @@
 'use strict';
 
+const Maths = require('../maths')
 const CONSTANTS = require('../../statics/js/constants')
 
 module.exports = class Element {
@@ -79,8 +80,9 @@ module.exports = class Element {
 			this.vel.x += ax;
 			this.vel.y += ay;
 
-			if (this.vel.x > CONSTANTS.SHIP_SPEED) this.vel.x = CONSTANTS.SHIP_SPEED
-			if (this.vel.y > CONSTANTS.SHIP_SPEED) this.vel.y = CONSTANTS.SHIP_SPEED
+			if (Maths.magnitude(this.vel.x, this.vel.y) > (CONSTANTS.SHIP_SPEED * 2)) {
+				this.vel = Maths.magnitude(this.vel.x, this.vel.y, (CONSTANTS.SHIP_SPEED * 2))
+			}
 		}
   }
   
