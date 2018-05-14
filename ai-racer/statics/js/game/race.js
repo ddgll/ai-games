@@ -56,6 +56,56 @@ function reset (noResetCircuits) {
   circuits = []
 }
 
+const chargeCircuit = (init) => {
+  noLoop()
+  if (cars && cars.length) {
+    bestScore = 0
+    bestBrain
+    bestScore = -Infinity
+    bestTurns = 0
+    bestFrames = 0
+    bestNumGen = 0
+    numGeneration = 0
+  }
+  if (POPULATION !== nextNbPopulation) {
+    POPULATION = nextNbPopulation
+    if (neat) neat = null
+    if (cars && cars.length) cars = []
+  }
+  db.circuits.where('size').equals(DEFAULT_CIRCUIT_SIZE).toArray().then((circuits) => {
+    if (!circuits || !circuits.length) {
+      console.log(circuits, DEFAULT_CIRCUIT_SIZE)
+      alert('Aucun circuit de cette taille...chelou...')
+    }
+    const dna = random(circuits)
+    circuit = new Circuit(X_START, Y_START, DEFAULT_CIRCUIT_SIZE, dna.dna, false, false, dna.id)
+    circuit.roadsFromDna()
+    if (cars && cars.length) {
+      first = null
+      if (best) best.reset()
+      cars.forEach(c => c.reset(X_START, Y_START))
+      console.log('START GAMLE')
+      loop()
+    }
+    if (testCar) testCar.reset()
+
+    if (init) {
+      initGeneration()
+      startEvaluation(X_START, Y_START)
+    }
+
+    selectBrain.elt.innerHTML = ''
+    let brains = []
+    db.brains.where('circuitId').equals(circuit.id).toArray().then((brains_) => {
+      brains = brains_
+      brains.sort((a, b) => b.score - a.score)
+      brains.forEach(b => {
+        selectBrain.options(b.score)
+      })
+    })
+  })
+}
+
 function setup () {
   collideDebug(true)
   db = new Dexie("ai-racer")
@@ -92,7 +142,6 @@ function setup () {
   let button = createButton('Reset Frame Rate')
   button.position(uiX, uiY+=40);
   button.mousePressed(() => {
-    slider.value(1)
     sliderm.value(1)
   })
   button = createCheckbox('Show Clones', showClones)
@@ -100,9 +149,7 @@ function setup () {
   button.changed(() => {
     showClones = !showClones
   })
-  slider = createSlider(1, 100, 1)
-  slider.position(uiX, uiY+=40)
-  sliderm = createSlider(1, 20, 1)
+  sliderm = createSlider(1, 30, 10)
   sliderm.position(uiX, uiY+=40)
   var p = createP('Taille du circuit')
   p.position(uiX, uiY+=40)
@@ -113,50 +160,7 @@ function setup () {
   })
   button = createButton('Change circuit')
   button.position(uiX, uiY+=40)
-  button.mousePressed(() => {
-    nb3Turns = 0
-    if (cars && cars.length) {
-      noLoop()
-      bestScore = 0
-      bestBrain
-      bestScore = -Infinity
-      bestTurns = 0
-      bestFrames = 0
-      bestNumGen = 0
-      numGeneration = 0
-    }
-    if (POPULATION !== nextNbPopulation) {
-      POPULATION = nextNbPopulation
-      if (neat) neat = null
-      if (cars && cars.length) cars = []
-    }
-    db.circuits.where('size').equals(DEFAULT_CIRCUIT_SIZE).toArray().then((circuits) => {
-      if (!circuits || !circuits.length) {
-        console.log(circuits, DEFAULT_CIRCUIT_SIZE)
-        alert('Aucun circuit de cette taille...chelou...')
-      }
-      const dna = random(circuits)
-      circuit = new Circuit(X_START, Y_START, DEFAULT_CIRCUIT_SIZE, dna.dna, false, false, dna.id)
-      circuit.roadsFromDna()
-      if (cars && cars.length) {
-        first = null
-        if (best) best.reset()
-        cars.forEach(c => c.reset(X_START, Y_START))
-        loop()
-      }
-      if (testCar) testCar.reset()
-
-      selectBrain.elt.innerHTML = ''
-      const brains = []
-      db.brains.where('circuitId').equals(circuit.id).toArray().then((brains_) => {
-        brains = brains_
-        brains.sort((a, b) => b.score - a.score)
-        brains.forEach(b => {
-          selectBrain.options(b.score)
-        })
-      })
-    })
-  })
+  button.mousePressed(chargeCircuit)
   button = createButton('TEST Mode')
   button.position(uiX, uiY+=40);
   button.mousePressed(() => {
@@ -206,7 +210,7 @@ function setup () {
 }
 
 function draw () {
-  const maxc = slider.value() * sliderm.value()
+  const maxc = sliderm.value()
   let first
   for (let i = 0; i < maxc; i++) {
     if (circuit) {
@@ -245,9 +249,9 @@ function draw () {
     log.elt.innerHTML = '<small>FPS multiplieur: ' + maxc + '</small> Frames: ' + frameCount + ' gen: ' + neat.generation + ' Cars:' + cars.length + '<br>'
     if (bestScore) {
       if (bestTurns === 3) {
-        log.elt.innerHTML += '<h2>Temps: ' + Math.round(bestFrames / 30) + 's (gen ' +  bestNumGen +  '): ' + bestTurns + ' turns</h2>'
+        log.elt.innerHTML += '<h2>Temps: ' + Math.round(bestFrames / 30) + 's (gen ' +  bestNumGen +  '): ' + bestTurns + ' turns (' + nb3Turns + ')</h2>'
       } else {
-        log.elt.innerHTML += '<h2>BEST: ' + Math.round(bestScore) + ' (gen ' +  bestNumGen +  '): ' + bestTurns + ' turns</h2>'
+        log.elt.innerHTML += '<h2>BEST: ' + Math.round(bestScore) + ' (gen ' +  bestNumGen +  '): ' + bestTurns + ' turns (' + nb3Turns + ')</h2>'
       }
     }
   }

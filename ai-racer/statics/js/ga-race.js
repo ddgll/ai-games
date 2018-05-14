@@ -52,6 +52,18 @@ function endEvaluation(x, y){
     bestTurns = bes.cTurns
     bestFrames = bes.cFrames
     bestNumGen = neat.generation
+    if (nb3Turns > 2) {
+      db.brains.put({
+        id: bes.cId,
+        circuitId: circuit.id,
+        score: bes.cScore,
+        frames: bes.cFrames,
+        brain: jsonBrain
+      })
+      DEFAULT_CIRCUIT_SIZE += 2
+      nb3Turns = 0
+      return chargeCircuit(true)
+    }
     // drawGraph(bes.graph(300, 200), '.svg')
   } else if (bestBrain) {
     best = new Car (X_START, Y_START, neataptic.Network.fromJSON(bestBrain), true)

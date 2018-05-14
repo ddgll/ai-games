@@ -42,6 +42,7 @@ module.exports = class Ship extends Element {
     this.yCheck = this.y * 1
     this.wrongCheck = 0
     this.oldAngle = 0
+    this.angleFrames = 0
 
     this.maxInputsValues = 0
     for(let i = 0; i < this.nbSensors; i++) {
@@ -83,35 +84,18 @@ module.exports = class Ship extends Element {
     return ACTIONS_STRING[index];
   }
 
-  nomType (type) {
-    switch(type) {
-      case 's': // .8
-        return .8
-      case 'w': // .7
-        return .7
-      case 'b': // .2
-        return .2
-      case 'p': // .4
-        return .4
-      case 'a': // .6
-        return .6
-      case 'bo': // .1
-        return 0
-      default:
-        return 0
-    }
-  }
-
   think (planets, ships, asteroids, bonuses, bullets) {
     // return
     this.obs = this.sense(planets, ships, asteroids, bonuses, bullets)
+    const vel = Math.sqrt(2) * (CONSTANTS.SHIP_SPEED*2)
     const inputs = [
       Maths.norm(this.rotation, -Math.PI * 2, Math.PI * 2), // 0
-      Maths.norm(Maths.magnitude(this.vel.x, this.vel.y), 0, CONSTANTS.SHIP_SPEED * 2), // 1
-      this.collide > 0 ? 1 : 0
+      Maths.norm(this.vel.x, -vel, vel), // 1
+      Maths.norm(this.vel.y, -vel, vel), // 2
+      this.collide > 0 ? 1 : 0 // 3
     ].concat(this.obs)
     // clear()
-    if (inputs.length !== 47) console.log('INPUTE LENGTH !!!', inputs.length)
+    if (inputs.length !== 60) console.log('INPUTE LENGTH !!!', inputs.length)
     let th = true
     inputs.forEach((i, idx) => {
       if (i < 0 || i > 1) {
@@ -122,7 +106,7 @@ module.exports = class Ship extends Element {
     })
     if (!th) return null
     const outputs = this.brain.activate(inputs)
-    // console.log(JSON.stringify(inputs, null, 2), inputs.length)
+    // console.log(JSON.stringify(inputs, null, 2), inputs.length, outputs.length)
     const label = this.oneHotDecode(outputs)
     this.action(label)
   }
@@ -185,14 +169,18 @@ module.exports = class Ship extends Element {
 
   turn (angle) {
     if (this.dead) return
-    if (angle !== this.oldAngle) {
+    if (this.angleFrames > 200) {
+      this.angleFrames = 0
       this.check360 = 0
     }
-    this.oldAngle = angle
+    this.check360 += angle
     this.rotation += angle
-    if (this.check360 > 2 * Math.PI) this.life--
+    if (this.check360 > 2 * Math.PI) {
+      this.angleFrames = 0
+      this.check360 = 0
+      this.life--
+    }
     this.rotation = this.rotation % (2 * Math.PI)
-    this.check360 = this.rotation
   }
 
   sense (planets, ships, asteroids, bonuses, bullets) {
@@ -206,6 +194,9 @@ module.exports = class Ship extends Element {
     let result = []
     const sort = (a, b) => a.d - b.d
     const reduce = (a, b) => a.concat(b)
+    const vels = Math.sqrt(2) * (CONSTANTS.SHIP_SPEED*2)
+    const vela = Math.sqrt(2) * (CONSTANTS.ASTEROID_MAX_SPEED*2)
+    const velb = Math.sqrt(2) * (CONSTANTS.BULLET_SPEED*2)
     let d, x, y, r, an, ow, min = Infinity
     planets.forEach(p => {
       x = p.x - this.x
@@ -234,16 +225,17 @@ module.exports = class Ship extends Element {
         if (d < this.seight) obs.ships.push({
           d: d,
           data: [
-          Maths.norm(x, -this.seight, this.seight), // 8 - 13
-          Maths.norm(y, -this.seight, this.seight), // 9 - 14
-          Maths.norm(s.rotation, -Math.PI * 2, Math.PI * 2), // 10 - 15
-          Maths.norm(Maths.magnitude(s.vel.x, s.vel.y), 0, CONSTANTS.SHIP_SPEED * 2), // 11 - 16
-          s.collide ? 1 : 0 // 12 - 17
+          Maths.norm(x, -this.seight, this.seight), // 8 - 14
+          Maths.norm(y, -this.seight, this.seight), // 9 - 15
+          Maths.norm(s.rotation, -Math.PI * 2, Math.PI * 2), // 10 - 16
+          Maths.norm(s.vel.x, -vels, vels), // 11 - 17
+          Maths.norm(s.vel.y, -vels, vels), // 12 - 18
+          s.collide ? 1 : 0 // 13 - 19
         ]})
       })
       obs.ships.sort(sort)
     }
-    while (obs.ships.length < 2) obs.ships.push({ d: 0, data: [ 0, 0, 0, 0, 0 ] })
+    while (obs.ships.length < 2) obs.ships.push({ d: 0, data: [ 0, 0, 0, 0, 0, 0 ] })
     result = result.concat(obs.ships.slice(0, 2).map(d => d.data).reduce(reduce)) // 10
     asteroids.forEach(a => {
       x = a.x - this.x
@@ -251,13 +243,14 @@ module.exports = class Ship extends Element {
       d = Maths.distance(0, 0, x, y)
       an = Maths.angleBetween(0, 0, x, y)
       if (d < this.seight && d < min) obs.asteroids.push({d: d, data: [
-        Maths.norm(x, -this.seight, this.seight), // 18 - 21
-        Maths.norm(y, -this.seight, this.seight), // 19 - 22
-        Maths.norm(Maths.magnitude(a.vel.x, a.vel.y), 0, CONSTANTS.ASTEROID_MAX_SPEED * 2) // 20 - 23
+        Maths.norm(x, -this.seight, this.seight), // 20 - 24
+        Maths.norm(y, -this.seight, this.seight), // 21 - 25
+        Maths.norm(a.vel.x, -vela, vela), // 22 - 26
+        Maths.norm(a.vel.y, -vela, vela), // 23 - 27
       ]})
     })
     obs.asteroids.sort(sort)
-    while (obs.asteroids.length < 2) obs.asteroids.push({ d: 0, data: [ 0, 0, 0 ] })
+    while (obs.asteroids.length < 2) obs.asteroids.push({ d: 0, data: [ 0, 0, 0, 0 ] })
     result = result.concat(obs.asteroids.slice(0, 2).map(d => d.data).reduce(reduce)) // 6
     bonuses.forEach(b => {
       x = b.x - this.x
@@ -267,8 +260,8 @@ module.exports = class Ship extends Element {
       if (d < this.seight) obs.bonuses.push({
         d: d,
         data: [
-        Maths.norm(x, -this.seight, this.seight), // 24 - 26
-        Maths.norm(y, -this.seight, this.seight) // 25 - 27
+        Maths.norm(x, -this.seight, this.seight), // 28 - 30
+        Maths.norm(y, -this.seight, this.seight) // 29 - 31
       ]})
     })
     obs.bonuses.sort(sort)
@@ -284,43 +277,45 @@ module.exports = class Ship extends Element {
       if (d < this.seight && b.owner !== this.id) obs.bullets.push({
         d: d,
         data: [
-        Maths.norm(x, -this.seight, this.seight), // 28 - 30 - 32 - 34
-        Maths.norm(y, -this.seight, this.seight) // 29 - 31 - 33 - 35
+        Maths.norm(x, -this.seight, this.seight), // 32 - 36 - 40 - 44
+        Maths.norm(y, -this.seight, this.seight), // 33 - 37 - 41 - 45
+        Maths.norm(b.vx, -velb, velb), // 34 - 38 - 42 - 46
+        Maths.norm(b.vy, -velb, velb), // 35 - 39 - 43 - 47
       ]})
     })
     obs.bullets.sort(sort)
-    while (obs.bullets.length < 4) obs.bullets.push({ d: 0, data: [ 0, 0 ] })
+    while (obs.bullets.length < 4) obs.bullets.push({ d: 0, data: [ 0, 0, 0, 0 ] })
     const zero = Maths.norm(0, -this.seight, this.seight)
     result = result.concat(obs.bullets.slice(0, 4).map(d => d.data).reduce(reduce)) // 8
     d = Maths.distance(this.x, this.y, 0, this.y)
     an = Maths.angleBetween(this.x, this.y, 0, this.y)
     if (d < this.seight) {
-      result = result.concat([Maths.norm(-this.x, -this.seight, this.seight), zero]) // 36 - 37
+      result = result.concat([Maths.norm(-this.x, -this.seight, this.seight), zero]) // 48 - 49
     } else {
       result = result.concat([0, 0])
     }
     d = Maths.distance(this.x, this.y, CONSTANTS.WIDTH, this.y)
     an = Maths.angleBetween(this.x, this.y, CONSTANTS.WIDTH, this.y)
     if (d < this.seight) {
-      result = result.concat([Maths.norm(CONSTANTS.WIDTH - this.x, -this.seight, this.seight), zero]) // 38 - 39
+      result = result.concat([Maths.norm(CONSTANTS.WIDTH - this.x, -this.seight, this.seight), zero]) // 50 - 51
     } else {
       result = result.concat([0, 0])
     }
     d = Maths.distance(this.x, this.y, this.x, 0)
     an = Maths.angleBetween(this.x, this.y, this.x, 0)
     if (d < this.seight) {
-      result = result.concat([zero, Maths.norm(-this.y, -this.seight, this.seight)]) // 40 - 41
+      result = result.concat([zero, Maths.norm(-this.y, -this.seight, this.seight)]) // 52 - 53
     } else {
       result = result.concat([0, 0])
     }
     d = Maths.distance(this.x, this.y, this.x, CONSTANTS.HEIGHT)
     an = Maths.angleBetween(this.x, this.y, this.x, CONSTANTS.HEIGHT)
     if (d < this.seight) {
-      result = result.concat([zero, Maths.norm(CONSTANTS.HEIGHT - this.y, -this.seight, this.seight)]) // 42 - 43
+      result = result.concat([zero, Maths.norm(CONSTANTS.HEIGHT - this.y, -this.seight, this.seight)]) // 54 - 55
     } else {
       result = result.concat([0, 0])
     }
-    if (result.length !== 44) console.log('RESULT !== 44', result.length)
+    if (result.length !== 56) console.log('RESULT !== 56', result.length)
     return result
   }
 
@@ -357,6 +352,7 @@ module.exports = class Ship extends Element {
     if (this.dead) return
     super.update()
     this.frames++
+    this.angleFrames++
     if (this.god > 0) this.god--
     if (this.brain) {
       this.think(planets, ships, asteroids, bonuses, bullets)

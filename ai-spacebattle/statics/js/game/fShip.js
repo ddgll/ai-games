@@ -64,87 +64,86 @@ class Ship extends Element {
           oy = this.lerp(o[9], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
           r.line(0, 0, ox, oy)
         }
-        if (o[13] !== 0 || o[14] !== 0) { // p2
+        if (o[14] !== 0 || o[15] !== 0) { // p2
           r.stroke(255, 0, 0)
-          ox = this.lerp(o[13], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
-          oy = this.lerp(o[14], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
+          ox = this.lerp(o[14], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
+          oy = this.lerp(o[15], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
           r.line(0, 0, ox, oy)
         }
         // ASTEROIDS
-        if (o[18] !== 0 || o[19] !== 0) { // p1
+        if (o[20] !== 0 || o[21] !== 0) { // p1
           r.stroke(255, 0, 255)
-          ox = this.lerp(o[18], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
-          oy = this.lerp(o[19], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
+          ox = this.lerp(o[20], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
+          oy = this.lerp(o[21], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
           r.line(0, 0, ox, oy)
         }
-        if (o[21] !== 0 || o[22] !== 0) { // p2
+        if (o[24] !== 0 || o[25] !== 0) { // p2
           r.stroke(255, 0, 255)
-          ox = this.lerp(o[21], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
-          oy = this.lerp(o[22], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
-          r.line(0, 0, ox, oy)
-        }
-        // BONUSES
-        if (o[24] !== 0 || o[25] !== 0) { // p1
-          r.stroke(0, 255, 0)
           ox = this.lerp(o[24], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
           oy = this.lerp(o[25], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
           r.line(0, 0, ox, oy)
         }
-        if (o[26] !== 0 || o[27] !== 0) { // p2
-          r.stroke(0, 255, 0)
-          ox = this.lerp(o[26], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
-          oy = this.lerp(o[27], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
-          r.line(0, 0, ox, oy)
-        }
-        // BULLETS
+        // BONUSES
         if (o[28] !== 0 || o[29] !== 0) { // p1
-          r.stroke(255, 0, 0)
+          r.stroke(0, 255, 0)
           ox = this.lerp(o[28], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
           oy = this.lerp(o[29], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
           r.line(0, 0, ox, oy)
         }
         if (o[30] !== 0 || o[31] !== 0) { // p2
-          r.stroke(255, 0, 0)
+          r.stroke(0, 255, 0)
           ox = this.lerp(o[30], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
           oy = this.lerp(o[31], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
           r.line(0, 0, ox, oy)
         }
+        // BULLETS
         if (o[32] !== 0 || o[33] !== 0) { // p1
           r.stroke(255, 0, 0)
           ox = this.lerp(o[32], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
           oy = this.lerp(o[33], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
           r.line(0, 0, ox, oy)
         }
-        if (o[34] !== 0 || o[35] !== 0) { // p2
+        if (o[36] !== 0 || o[37] !== 0) { // p2
           r.stroke(255, 0, 0)
-          ox = this.lerp(o[34], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
-          oy = this.lerp(o[35], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
-          r.line(0, 0, ox, oy)
-        }
-        // WALLS
-        if (o[36] !== 0 || o[37] !== 0) { // p1
-          r.stroke(255, 255, 0)
-          console.log(this.lerp(o[36], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS), this.lerp(o[37], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS))
           ox = this.lerp(o[36], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
           oy = this.lerp(o[37], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
           r.line(0, 0, ox, oy)
         }
-        if (o[38] !== 0 || o[39] !== 0) { // p2
-          r.stroke(255, 255, 0)
-          ox = this.lerp(o[38], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
-          oy = this.lerp(o[39], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
-          r.line(0, 0, ox, oy)
-        }
         if (o[40] !== 0 || o[41] !== 0) { // p1
-          r.stroke(255, 255, 0)
+          r.stroke(255, 0, 0)
           ox = this.lerp(o[40], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
           oy = this.lerp(o[41], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
           r.line(0, 0, ox, oy)
         }
-        if (o[42] !== 0 || o[43] !== 0) { // p2
+        if (o[44] !== 0 || o[45] !== 0) { // p2
+          r.stroke(255, 0, 0)
+          ox = this.lerp(o[44], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
+          oy = this.lerp(o[45], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
+          r.line(0, 0, ox, oy)
+        }
+        // WALLS
+        if (o[48] !== 0 || o[49] !== 0) { // p1
           r.stroke(255, 255, 0)
-          ox = this.lerp(o[42], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
-          oy = this.lerp(o[43], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
+          ox = this.lerp(o[48], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
+          oy = this.lerp(o[49], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
+          r.line(0, 0, ox, oy)
+        }
+        if (o[50] !== 0 || o[51] !== 0) { // p2
+          r.stroke(255, 255, 0)
+          ox = this.lerp(o[50], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
+          oy = this.lerp(o[51], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
+          r.line(0, 0, ox, oy)
+        }
+        if (o[52] !== 0 || o[53] !== 0) { // p1
+          r.stroke(255, 255, 0)
+          ox = this.lerp(o[52], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
+          oy = this.lerp(o[53], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
+          r.line(0, 0, ox, oy)
+        }
+        if (o[54] !== 0 || o[55] !== 0) { // p2
+          r.stroke(255, 255, 0)
+          ox = this.lerp(o[54], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
+          oy = this.lerp(o[55], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
           r.line(0, 0, ox, oy)
         }
         // for (let obs of o) {
