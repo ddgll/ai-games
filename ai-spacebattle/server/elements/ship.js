@@ -197,18 +197,19 @@ module.exports = class Ship extends Element {
     const vels = Math.sqrt(2) * (CONSTANTS.SHIP_SPEED*2)
     const vela = Math.sqrt(2) * (CONSTANTS.ASTEROID_MAX_SPEED*2)
     const velb = Math.sqrt(2) * (CONSTANTS.BULLET_SPEED*2)
-    let d, x, y, r, an, ow, min = Infinity
+    let d, x, y, r, an, ow, sei, min = Infinity
     planets.forEach(p => {
       x = p.x - this.x
       y = p.y - this.y
       r = p.radius
       d = Maths.distance(0, 0, x, y)
       ow = p.owner === this.id ? 1 : p.challenger === this.id ? p.challenge / 100 : 0
-      if (d < this.seight *2) obs.planets.push({
+      sei = this.seight * 4
+      if (d < sei) obs.planets.push({
         d: d,
         data: [
-        Maths.norm(x, -this.seight*2, this.seight*2), // 0 - 4
-        Maths.norm(y, -this.seight*2, this.seight*2), // 1 - 5
+        Maths.norm(x, -sei, sei), // 0 - 4
+        Maths.norm(y, -sei, sei), // 1 - 5
         Maths.norm(r, CONSTANTS.PLANET_MIN_RADIUS, CONSTANTS.PLANET_MAX_RADIUS), // 2 - 6
         ow === this.id ? 1 : 0 // 3 - 7
       ]})

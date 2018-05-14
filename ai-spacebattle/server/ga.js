@@ -91,11 +91,11 @@ module.exports = class Ga {
 
     // Provenance
     for(let i = 0; i < this.neat.provenance; i++){
-      if (this.bestBrain) {
-        newPopulation.push(neataptic.Network.fromJSON(this.bestBrain))
-      } else {
-        newPopulation.push(neataptic.Network.fromJSON(this.neat.template.toJSON()))
-      }
+      // if (this.bestBrain) {
+      //   newPopulation.push(neataptic.Network.fromJSON(this.bestBrain))
+      // } else {
+      newPopulation.push(neataptic.Network.fromJSON(this.neat.template.toJSON()))
+      // }
     }
 
     // Elitism

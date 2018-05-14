@@ -31,7 +31,7 @@ module.exports = class Asteroid extends Element {
     do {
       this.vel = { x: Math.random() * (Maths.randomInt(1, 4) - 3), y: Math.random() * (Maths.randomInt(1, 4) - 3) }
     } while (this.vel.x === 0 && this.vel.y === 0)
-    if (!CONSTANTS.SHIP_SEE_SHIP) this.vel.x = this.vel.y = 0
+    if (CONSTANTS.ASTEROID_FIXED) this.vel.x = this.vel.y = 0
   }
 
   update (ships) {
@@ -63,7 +63,7 @@ module.exports = class Asteroid extends Element {
     while (this.vel.x === 0 && this.vel.y === 0) {
       this.vel = { x: Math.random() * (Maths.randomInt(1, 4) - 3), y: Math.random() * (Maths.randomInt(1, 4) - 3) }
     }
-    if (!CONSTANTS.SHIP_SEE_SHIP) this.vel.x = this.vel.y = 0
+    if (CONSTANTS.ASTEROID_FIXED) this.vel.x = this.vel.y = 0
   }
 
   shipCollide (x, y, r) {

@@ -47,14 +47,14 @@ class Ship extends Element {
         // PLANETS
         if (o[0] !== 0 || o[1] !== 0) { // p1
           r.stroke(0, 255, 0)
-          ox = this.lerp(o[0], -CONSTANTS.PLANET_MAX_RADIUS * 2, CONSTANTS.PLANET_MAX_RADIUS * 2)
-          oy = this.lerp(o[1], -CONSTANTS.PLANET_MAX_RADIUS * 2, CONSTANTS.PLANET_MAX_RADIUS * 2)
+          ox = this.lerp(o[0], -CONSTANTS.PLANET_MAX_RADIUS * 4, CONSTANTS.PLANET_MAX_RADIUS * 4)
+          oy = this.lerp(o[1], -CONSTANTS.PLANET_MAX_RADIUS * 4, CONSTANTS.PLANET_MAX_RADIUS * 4)
           r.line(0, 0, ox, oy)
         }
         if (o[4] !== 0 || o[5] !== 0) { // p2
           r.stroke(0, 255, 0)
-          ox = this.lerp(o[4], -CONSTANTS.PLANET_MAX_RADIUS * 2, CONSTANTS.PLANET_MAX_RADIUS * 2)
-          oy = this.lerp(o[5], -CONSTANTS.PLANET_MAX_RADIUS * 2, CONSTANTS.PLANET_MAX_RADIUS * 2)
+          ox = this.lerp(o[4], -CONSTANTS.PLANET_MAX_RADIUS * 4, CONSTANTS.PLANET_MAX_RADIUS * 4)
+          oy = this.lerp(o[5], -CONSTANTS.PLANET_MAX_RADIUS * 4, CONSTANTS.PLANET_MAX_RADIUS * 4)
           r.line(0, 0, ox, oy)
         }
         // SHIPS
