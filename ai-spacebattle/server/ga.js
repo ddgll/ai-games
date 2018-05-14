@@ -44,8 +44,8 @@ module.exports = class Ga {
         popsize: this.popsize,
         mutationRate: this.mutationRate,
         elitism: Math.round(this.elitism * this.popsize),
-        // network: new neataptic.architect.Random(this.nbInputs, this.nbInputs*2, this.nbOutputs)
-        network: new neataptic.architect.Perceptron(this.nbInputs, this.nbInputs, Math.round(this.nbInputs/2), this.nbOutputs)
+        network: new neataptic.architect.Random(this.nbInputs, this.nbInputs/2, this.nbOutputs)
+        // network: new neataptic.architect.Perceptron(this.nbInputs, this.nbInputs, Math.round(this.nbInputs/2), this.nbOutputs)
       }
     )
     if(population && population.length) this.neat.population = population

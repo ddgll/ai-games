@@ -9,7 +9,7 @@ module.exports = function (io) {
 
   if (!game) {
     game = new Game(io)
-    ga = new Ga(game, 39, 8, io)
+    ga = new Ga(game, 47, 9, io)
     game.context.setGameOver(ga.endEvolution.bind(ga))
     ga.startEvolution()
     // game.startIntervals()
