@@ -9,6 +9,7 @@
   "author": "grilldotcom@gmail.com",
   "license": "ISC",
   "dependencies": {
+    "binary-file": "^0.2.1",
     "clear": "^0.1.0",
     "express": "^4.16.3",
     "neataptic": "^1.4.7",

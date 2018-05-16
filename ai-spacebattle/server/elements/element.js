@@ -20,7 +20,8 @@ module.exports = class Element {
 
     this.springs = []
 
-    this.vel = { x: 0, y: 0 }
+		this.vel = { x: 0, y: 0 }
+		this.gra = { x: 0, y: 0 }
 
     this.rotation = 0
 	}
@@ -49,6 +50,7 @@ module.exports = class Element {
   }
 
   handleGravitations () {
+		this.gra = { x: 0, y: 0 }
 		for(let i = 0, l = this.gravitations.length; i < l; i += 1) {
 			this.gravitateTo(this.gravitations[i])
 		}
@@ -65,7 +67,7 @@ module.exports = class Element {
 					force = p.mass / distSQ,
 					ax = dx / dist * force,
 					ay = dy / dist * force;
-			if (dist < CONSTANTS.PLANET_MAX_RADIUS / 1.5) {
+			if (dist < CONSTANTS.PLANET_MAX_RADIUS * .5) {
 				this.vel.x -= ax * Math.random();
 				this.vel.y -= ay * Math.random();
 			}
@@ -77,11 +79,11 @@ module.exports = class Element {
 					force = p.mass / distSQ,
 					ax = dx / dist * force,
 					ay = dy / dist * force;
-			this.vel.x += ax;
-			this.vel.y += ay;
+			this.gra.x += ax;
+			this.gra.y += ay;
 
-			if (Maths.magnitude(this.vel.x, this.vel.y) > (CONSTANTS.SHIP_SPEED * 2)) {
-				this.vel = Maths.magnitude(this.vel.x, this.vel.y, (CONSTANTS.SHIP_SPEED * 2))
+			if (Maths.magnitude(this.gra.x, this.gra.y) > (CONSTANTS.SHIP_SPEED * 2)) {
+				this.gra = Maths.magnitude(this.gra.x, this.gra.y, (CONSTANTS.SHIP_SPEED * 2))
 			}
 		}
   }

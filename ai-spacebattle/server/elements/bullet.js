@@ -38,7 +38,7 @@ module.exports = class Bullet extends Element {
     return this.life <= 0
   }
 
-  update (planets, ships) {
+  update (planets, ships, asteroids) {
     if (!this.life) return
     this.life--
     if (this.target !== null) {
@@ -57,6 +57,26 @@ module.exports = class Bullet extends Element {
     }
     if (this.worldCollide()) this.life = 0
 
+    const reg = /^s(.*)$/
+    for (let i = 0, l = asteroids.length, x, y, r, a; i < l; i++) {
+      a = asteroids[i]
+      x = a.x
+      y = a.y
+      r = a.radius / 2
+      if (this.circleCollide(x, y, r)) {
+        if (reg.test(this.owner)) {
+          const id = parseInt(this.owner.replace(reg, '$1'))
+          const ship = ships.find(s => s.id === id)
+          if (ship) {
+            ship.score += 10
+          }
+        }
+        this.life = 0
+        a.kill()
+        break
+      }
+    }
+
     for (let i = 0, l = planets.length, x, y, r, p; i < l; i++) {
       p = planets[i]
       x = p.x
@@ -74,9 +94,9 @@ module.exports = class Bullet extends Element {
       y = s.y
       if (this.shipCollide(x, y, CONSTANTS.SHIP_SIZE)) {
         this.life = 0
-        s.setCollide(0, 10)
+        s.setCollide(0, 30)
         const ownership = ships.find(s => 's' + s.id === this.owner)
-        if (ownership) ownership.score += s.life > 0 ? 10 : 100
+        if (ownership) ownership.score += s.life > 0 ? 100 : 1000
         break
       } else {
         // console.log('SHIP NOT COLLLLLIIIIIDE !!!!!')

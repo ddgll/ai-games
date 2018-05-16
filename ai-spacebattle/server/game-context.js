@@ -7,6 +7,8 @@ const Planet = require('./elements/planet')
 const Asteroid = require('./elements/asteroid')
 const Maths = require('./maths')
 const CONSTANTS = require('../statics/js/constants')
+const fs = require('fs')
+const path = require('path')
 
 module.exports = class GameContext {
   constructor (options, io) {
@@ -24,6 +26,7 @@ module.exports = class GameContext {
     this.planets = []
     this.bonuses = []
     this.first = null
+    this.bestScore = null
     this.snapshot = null
     this.gameover = null
     this.io = io
@@ -62,7 +65,7 @@ module.exports = class GameContext {
       const asteroids = ctx.a
       for (let i = 0, l = asteroids.length, b; i < l; i++) {
         b = asteroids[i]
-        diffs.push(`a|${b.id}|${b.x}|${b.y}}`)
+        diffs.push(`a|${b.id}|${b.x}|${b.y}|${b.e}`)
       }
       const planets = ctx.p
       const sPlanets = this.snapshot.p
@@ -79,25 +82,29 @@ module.exports = class GameContext {
     }
     this.snapshot = ctx
     this.counter++
-    let max = 0, first
+    let max = 0
     for (let i = 0, l = this.planets.length; i < l; i++) this.planets[i].update(this.planets, this.ships, this.asteroids)
     for (let i = 0, l = this.ships.length, s; i < l; i++) {
       s = this.ships[i]
       s.update(this.planets, this.ships, this.asteroids, this.bonuses, ctx.b)
-      if (!s.dead && s.brain && s.score > max) {
-        max = s.score
-        first = s
+      if (s.brain && s.score > this.bestScore) {
+        if (s.score > this.bestScore + 100) {
+          this.first = s
+          const d = new Date()
+          const binary = s.brain.export()
+          const name = `./brains/brain-${d.getTime()}-${Math.round(this.bestScore)}.bin`
+          const bestname = `./best-brain.bin`
+          const blob = new DataView(binary).buffer
+          fs.writeFile(path.resolve(name), new Buffer(blob), () => {})
+          fs.writeFile(path.resolve(bestname), new Buffer(blob), () => {})
+          console.log('SAVE New best score', s.score)
+        }
+        this.bestScore = s.score
       }
     }
     for (let i = 0, l = this.asteroids.length; i < l; i++) this.asteroids[i].update(this.ships)
-    this.ships = this.ships.filter(s => s.life > 0)
+    this.ships = this.ships.filter(s => s.life > 0 || s.brain)
     if (this.ships.filter(s => s.brain !== null).length === 0 && typeof this.gameover === 'function') this.gameover(this.counter)
-    // this.bullets.forEach(b => b.update())
-    if (first && max > this.best && this.first != first.id) {
-      this.io.emit('first', first.id)
-      this.first = first.id
-      this.best = max
-    }
   }
 
   getShipsDiff (ctx, snapshot) {
@@ -160,7 +167,7 @@ module.exports = class GameContext {
       bullets = bullets.concat(s.bullets.filter(b => !b.dead()).map(b => {
         return { id: b.id, o: b.owner, x: b.x, y: b.y, vx: b.vel.x, vy: b.vel.y, a: b.rotation }
       }))
-      return { id: s.id, n: s.name, x: s.x, y: s.y, a: s.rotation, s: s.score, d: s.distance, l: s.life, g: (s.god > 0) ? 1 : 0, o: s.obs }
+      return { id: s.id, n: s.name, x: s.x, y: s.y, a: s.rotation, s: s.score, d: s.distance, l: s.life, g: (s.god > 0) ? 1 : 0, o: s.obs, le: s.brain && s.brain.learning && s.brain.training ? 1 : 0, lo: isNaN(s.loss) ? 0 : s.loss, re: s.reward, g: s.god }
     })
     const planets = this.planets.map(p => {
       bullets = bullets.concat(p.bullets.filter(b => !b.dead()).map(b => {
@@ -171,8 +178,11 @@ module.exports = class GameContext {
     const bonuses = this.bonuses.map(s => {
       return { id: s.id, x: s.x, y: s.y }
     })
+    let e
     const asteroids = this.asteroids.map(s => {
-      return { id: s.id, x: s.x, y: s.y, v: s.vertexes }
+      e = { id: s.id, x: s.x, y: s.y, v: s.vertexes, e: s.explode ? 1 : 0 }
+      if (s.explode) s.reset()
+      return e
     })
     const time = d.getTime() - this.start
     return { id: this.counter, t: time, s: ships, b: bullets, p: planets, bo: bonuses, a: asteroids }
@@ -247,8 +257,16 @@ module.exports = class GameContext {
   }
 
   createPlanets () {
-    const minDistance = CONSTANTS.PLANET_MAX_RADIUS * 2
-    for(let i = 1, planet; i <= CONSTANTS.NB_PLANETS; i++){
+    this.planets = [
+      new Planet(
+        1,
+        CONSTANTS.WIDTH / 2,
+        CONSTANTS.HEIGHT / 2,
+        Maths.randomInt(CONSTANTS.PLANET_MIN_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
+      )
+    ]
+    const minDistance = CONSTANTS.PLANET_MAX_RADIUS * 1.5
+    for(let i = 2, planet; i <= CONSTANTS.NB_PLANETS; i++){
       do{
         planet = new Planet(
           this.planets.length + 1,
@@ -275,13 +293,11 @@ module.exports = class GameContext {
         d2 = Maths.distance(item.x, item.y, item.x, 0);
         d3 = Maths.distance(item.x, item.y, 0, item.y);
         d4 = Maths.distance(item.x, item.y, CONSTANTS.WIDTH, item.y);
-        d5 = Maths.distance(item.x, item.y, 100, 100);
         if( d < min || 
-            d1 < CONSTANTS.PLANET_MIN_RADIUS ||
-            d2 < CONSTANTS.PLANET_MIN_RADIUS ||
-            d3 < CONSTANTS.PLANET_MIN_RADIUS ||
-            d4 < CONSTANTS.PLANET_MIN_RADIUS ||
-            d5 < CONSTANTS.PLANET_MIN_RADIUS
+            d1 < CONSTANTS.PLANET_MAX_RADIUS ||
+            d2 < CONSTANTS.PLANET_MAX_RADIUS ||
+            d3 < CONSTANTS.PLANET_MAX_RADIUS ||
+            d4 < CONSTANTS.PLANET_MAX_RADIUS
           ) return true
       }
     }

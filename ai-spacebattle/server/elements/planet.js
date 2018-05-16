@@ -16,7 +16,7 @@ module.exports = class Planet extends Element {
     this.y = y
     this.mass = r * 75
 
-    console.log('Planet ', id, ' mass:', this.mass)
+    // console.log('Planet ', id, ' mass:', this.mass)
 
     this.view = r * 2
 
@@ -43,7 +43,7 @@ module.exports = class Planet extends Element {
     return false
   }
 
-  update (planets, ships) {
+  update (planets, ships, asteroids) {
     let minimum = Infinity, target = null, nb = 0, challenger = null
     for (let i = 0, l = ships.length, x, y, s, d; i < l; i++) {
       s = ships[i]
@@ -51,6 +51,13 @@ module.exports = class Planet extends Element {
       y = s.y
       d = Maths.distance(this.x, this.y, x, y)
       if (d < this.view) {
+        if (d < (this.radius / 2)) {
+          if (this.x + this.radius + 20 > CONSTANTS.WIDTH) {
+            s.x = this.x - this.radius - 20
+          } else {
+            s.x = this.x + this.radius + 20
+          }
+        }
         if (d < minimum) {
           minimum = d
           target = s
@@ -87,8 +94,8 @@ module.exports = class Planet extends Element {
       this.challenge = 0
     }
     for (let i = 0, l = this.bullets.length, b; i < l; i++) {
-      this.bullets[i].update(planets, ships)
+      this.bullets[i].update(planets, ships, asteroids)
     }
-    if (this.ownership) this.ownership.score += .1
+    if (this.ownership && !this.ownership.brain) this.ownership.score += .1
   }
 }

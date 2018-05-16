@@ -11,7 +11,7 @@ class Context {
     this.me = data.ship
     for (let i = 0, l = data.context.s.length, s; i < l; i++) {
       s = data.context.s[i]
-      this.ships[s.id] = new Ship(s.id, s.n, { x: s.x, y: s.y, a: s.a, l: s.l, s: s.s, d: s.d, o: s.o }, this.renderer, log)
+      this.ships[s.id] = new Ship(s.id, s.n, { x: s.x, y: s.y, a: s.a, l: s.l, s: s.s, d: s.d, o: s.o, t: s.t, le: s.le, lo: s.lo, re: s.re, g: s.g }, this.renderer, log)
     }
     for (let i = 0, l = data.context.p.length, p; i < l; i++) {
       p = data.context.p[i]
@@ -123,9 +123,17 @@ class Context {
       if (me && s.owner === me.id) nb++
       if (this.onScreen(s.context.x, s.context.y)) s.draw(me, this.ships)
     }
+    let ex = null
     for (let id in this.asteroids) {
       s = this.asteroids[id]
-      if (this.onScreen(s.context.x, s.context.y)) s.draw(me)
+      if (this.onScreen(s.context.x, s.context.y)) {
+        ex = parseInt(s.context.e)
+        if (ex === 1) {
+          this.explosions.push(new Explosion(parseFloat(s.context.x), parseFloat(s.context.y), this.renderer))
+        } else {
+          s.draw(me)
+        }
+      }
     }
     for (let i = 0, l = this.explosions.length, s; i < l; i++) {
       this.explosions[i].draw()
@@ -286,11 +294,12 @@ class Context {
   updateAsteroid (data) {
     const id = data[1]
     // this.debug('Update asteroid! <pre>' + JSON.stringify(data, null, true) + '</pre>', true)
-    if (data.length === 4) {
+    if (data.length === 5) {
       const x = data[2]
       const y = data[3]
+      const e = data[4]
       if (typeof this.asteroids[id] !== 'undefined') {
-        this.asteroids[id].update({ x, y })
+        this.asteroids[id].update({ x, y, e })
       }
     }
   }

@@ -1,5 +1,5 @@
-var context, scale, first, debug
-const sketch = (socket, name) => {
+var context, scale, debug, chartData = [['Time', 'Reward', 'Loss']], chart, obs = true, human = true
+const sketch = (socket, scale) => {
   let containerDiv = document.getElementById('container')
   containerDiv.style.width = CONSTANTS.CANVAS_WIDTH + 'px'
   containerDiv.style.height = CONSTANTS.CANVAS_HEIGHT + 'px'
@@ -11,6 +11,41 @@ const sketch = (socket, name) => {
   backgroundDiv.style.height = CONSTANTS.HEIGHT + 'px'
   let firstDiv = document.getElementById('first')
   let move = true, mouse, best, hold = false, xCenter, yCenter, nb = 0, distances = []
+  let btn = document.getElementById('obs')
+  btn.addEventListener('click', () => {
+    obs = !obs
+  })
+  btn = document.getElementById('human')
+  btn.addEventListener('click', () => {
+    human = !human
+    socket.emit('h', human)
+  })
+  const drawChart = (context) => {
+    if (!context || !context.s || !context.s.length || !google || !google.visualization || !google.visualization.arrayToDataTable || !google.visualization.LineChart) return
+    let sumR = 0, sumL = 0
+    context.s.forEach(s => {
+      sumR += s.re
+      sumL += isNaN(s.lo) ? 0 : s.lo
+    })
+    const moyR = sumR / context.s.length
+    const moyL = sumL / context.s.length
+    if (chartData.length > 1000) chartData = []
+    chartData.push([context.t, moyR, moyL])
+    var data = google.visualization.arrayToDataTable(chartData);
+    var options = {
+      title: 'Training',
+      curveType: 'function',
+      legend: { position: 'bottom' }
+    };
+
+    if (!chart) chart = new google.visualization.LineChart(document.getElementById('chart'));
+
+    chart.draw(data, options)
+  }
+
+  google.charts.load('current', {'packages':['corechart']});
+  google.charts.setOnLoadCallback(drawChart)
+
   return (p) => {
     p.setup = function () {
       debug = p
@@ -22,40 +57,38 @@ const sketch = (socket, name) => {
       xCenter = CONSTANTS.CANVAS_WIDTH / 2
       yCenter = CONSTANTS.CANVAS_HEIGHT / 2
 
+      let counter = 0
+
       socket.on('f', function (data) {
         context = new Context(data, p)
         context.setBounds(xCenter, yCenter)
+        setFirst(data.context)
+        if (counter++ === 100) {
+          counter = 0
+          drawChart(data.context)
+        }
+        
+      })
+      socket.on('c', function (ctx) {
+        if (!context) return
+        context.fromRemote(ctx)
       })
       socket.on('nb', function (nb_) {
         nb = nb_
       })
-      socket.on('best', function (nb_) {
-        best = nb_
-      })
-      socket.on('brain', function (json) {
-        console.log('BRAIN', json)
-        const brain = neataptic.Network.fromJSON(json)
-        let svg = document.getElementById('brain')
-        WIDTH = CONSTANTS.WIDTH
-        HEIGHT = CONSTANTS.HEIGHT
-        svg.setAttribute('width', CONSTANTS.WIDTH + 'px')
-        svg.setAttribute('height', CONSTANTS.HEIGHT + 'px')
-        // svg.setAttribute('viewBox', (CONSTANTS.HEIGHT - CONSTANTS.WIDTH) + ' 0 ' + CONSTANTS.WIDTH + ' ' + CONSTANTS.HEIGHT)
-        svg.setAttribute('viewBox', '-400 -' + CONSTANTS.HEIGHT * 0.5 + ' ' + CONSTANTS.WIDTH * 1.2 + ' ' + CONSTANTS.HEIGHT * 1.2)
-        svg.style.display = 'block'
-        drawGraph(brain.graph(CONSTANTS.WIDTH, CONSTANTS.HEIGHT), '#brain')
-      })
 
-      socket.on('first', function (id) {
-        if (typeof context.ships[id] !== 'undefined') {
-          first = context.ships[id]
-          firstDiv.innerHTML = '<h4>First: ' + first.name + ' => Score: ' + Math.round(first.context.s) + '  Distance: ' + Math.round(first.context.d * 100) + ' <small>(' + nb + ')</small></h4>'
-          if (best) {
-            firstDiv.innerHTML += '<h1>Best score: ' + best + '</h1>' 
+      const setFirst = (ctx) => {
+        let max = -Infinity, first
+        ctx.s.forEach(s => {
+          if (s.s > max) {
+            max = s.s
+            first = s
           }
-          distances.push(first.context.d)
+        })
+        if (first) {
+          firstDiv.innerHTML = '<h4>First: ' + first.n + ' => Score: ' + Math.round(first.s) + '  Distance: ' + Math.round(first.d * 100) + ' <small>(' + nb + ')</small></h4>'
         }
-      })
+      }
     }
       
     p.draw = function () {
@@ -78,20 +111,10 @@ const sketch = (socket, name) => {
         if (xCenter < -(CONSTANTS.WIDTH - CONSTANTS.CANVAS_WIDTH + 15)) xCenter = -(CONSTANTS.WIDTH - CONSTANTS.CANVAS_WIDTH + 15)
         if (yCenter > 15) yCenter = 15
         if (yCenter < -(CONSTANTS.HEIGHT - CONSTANTS.CANVAS_HEIGHT + 15)) yCenter = -(CONSTANTS.HEIGHT - CONSTANTS.CANVAS_HEIGHT + 15)
+        context.update()
         context.setBounds(xCenter, yCenter)
         p.translate(xCenter, yCenter)
         context.draw()
-      }
-    }
-
-    p.keyPressed = function () {
-      console.log(p.keyCode)
-      if (p.keyCode === 72) { // h
-        socket.emit('h', true)
-      } else if (p.keyCode === 85) {// u
-        socket.emit('h', false)
-      } else if (p.keyCode === 66) {// b
-        socket.emit('b')
       }
     }
   }
@@ -107,7 +130,7 @@ function init () {
     y = w.innerHeight|| e.clientHeight|| g.clientHeight;
 
   const scaleX = x / CONSTANTS.WIDTH
-  const scaleY = y / CONSTANTS.HEIGHT
+  const scaleY = (y - 300) / CONSTANTS.HEIGHT
   
   scale = scaleX > scaleY ? scaleY : scaleX
   if (scale > 1) scale = 0.8
@@ -117,8 +140,10 @@ function init () {
   CONSTANTS.CANVAS_HEIGHT = CONSTANTS.HEIGHT
   const socket = io()
   socket.on('connect', function () {
-    socket.emit('spectate')
-    new p5(sketch(socket), 'game')
+    new p5(sketch(socket, scale), 'game')
+    setTimeout(() => {
+      socket.emit('spectate')
+    }, 1000)
   })
 }
 

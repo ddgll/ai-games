@@ -2,6 +2,8 @@
 
 const Game = require('./game')
 const Ga = require('./ga')
+const fs = require('fs')
+const path = require('path')
 
 module.exports = function (io) {
 
@@ -9,9 +11,18 @@ module.exports = function (io) {
 
   if (!game) {
     game = new Game(io)
-    ga = new Ga(game, 60, 9, io)
-    game.context.setGameOver(ga.endEvolution.bind(ga))
-    ga.startEvolution()
+    const name = `./best-brain.bin`
+    const saved = path.resolve(name)
+    if (fs.existsSync(saved)){
+      const data = fs.readFileSync(saved)
+      game.createBots(data)
+    } else {
+      game.createBots()
+    }
+    game.startIntervals()
+    // ga = new Ga(game, 60, 9, io)
+    // game.context.setGameOver(ga.endEvolution.bind(ga))
+    // ga.startEvolution()
     // game.startIntervals()
   }
   
@@ -45,6 +56,14 @@ module.exports = function (io) {
 
     socket.on('c', ([x, y]) => {
       game.shoot(id, x, y)
+    })
+
+    socket.on('l', () => {
+      game.learn()
+    })
+
+    socket.on('t', () => {
+      game.train()
     })
 
     socket.on('b', () => {

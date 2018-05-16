@@ -18,6 +18,6 @@ class Element {
   }
 
   update (context) {
-    this.context = context
+    this.context = Object.assign({}, this.context, context)
   }
 }

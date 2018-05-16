@@ -47,3 +47,9 @@
   bottom: 0;
   background-color: #ffffff;
 }
+
+#actions {
+  position: fixed;
+  top: 8px;
+  right: 8px;
+}

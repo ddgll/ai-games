@@ -15,6 +15,7 @@ module.exports = class Asteroid extends Element {
     this.mass = CONSTANTS.ASTEROID_RADIUS * 100
     this.total = Math.floor(Maths.randomInt(4, 6))
     this.vertexes = []
+    this.explode = false
     for (let i = 0, a, x, y, r; i < this.total; i++) {
       a = Maths.map(i, 0, this.total, 0, Math.PI * 2)
       r = this.radius + Maths.randomInt(-10, 10)
@@ -30,8 +31,22 @@ module.exports = class Asteroid extends Element {
 
     do {
       this.vel = { x: Math.random() * (Maths.randomInt(1, 4) - 3), y: Math.random() * (Maths.randomInt(1, 4) - 3) }
-    } while (this.vel.x === 0 && this.vel.y === 0)
+    } while (Maths.magnitude(this.vel.x, this.vel.y) < (CONSTANTS.ASTEROID_MAX_SPEED / 3))
     if (CONSTANTS.ASTEROID_FIXED) this.vel.x = this.vel.y = 0
+  }
+
+  kill () {
+    this.explode = true
+  }
+
+  reset () {
+    this.explode = false
+    const rand = Maths.randomInt(0, 1)
+    this.x = (rand === 0) ? (CONSTANTS.WIDTH + CONSTANTS.ASTEROID_RADIUS) : -CONSTANTS.ASTEROID_RADIUS
+    this.y = Maths.randomInt(0, CONSTANTS.HEIGHT)
+    do {
+      this.vel = { x: Math.random() * (Maths.randomInt(1, 4) - 3), y: Math.random() * (Maths.randomInt(1, 4) - 3) }
+    } while (Maths.magnitude(this.vel.x, this.vel.y) < (CONSTANTS.ASTEROID_MAX_SPEED / 3))
   }
 
   update (ships) {
@@ -50,17 +65,17 @@ module.exports = class Asteroid extends Element {
     }
     this.x += this.vel.x
     this.y += this.vel.y
-    if (this.x > (CONSTANTS.WIDTH + this.radius)) {
-      this.x = -this.radius
-    } else if (this.x < -this.radius) {
-      this.x = CONSTANTS.WIDTH + this.radius
+    if (this.x > (CONSTANTS.WIDTH + this.radius / 2)) {
+      this.x = -this.radius / 2
+    } else if (this.x < -this.radius / 2) {
+      this.x = CONSTANTS.WIDTH + this.radius / 2
     }
-    if (this.y > (CONSTANTS.HEIGHT + this.radius)) {
-      this.y = -this.radius
-    } else if (this.y < -this.radius) {
-      this.y = CONSTANTS.HEIGHT + this.radius
+    if (this.y > (CONSTANTS.HEIGHT + this.radius / 2)) {
+      this.y = -this.radius / 2
+    } else if (this.y < -this.radius / 2) {
+      this.y = CONSTANTS.HEIGHT + this.radius / 2
     }
-    while (this.vel.x === 0 && this.vel.y === 0) {
+    while (Maths.magnitude(this.vel.x, this.vel.y) < (CONSTANTS.ASTEROID_MAX_SPEED / 3)) {
       this.vel = { x: Math.random() * (Maths.randomInt(1, 4) - 3), y: Math.random() * (Maths.randomInt(1, 4) - 3) }
     }
     if (CONSTANTS.ASTEROID_FIXED) this.vel.x = this.vel.y = 0

@@ -1,4 +1,4 @@
-var context
+var context, obs = false
 const sketch = (socket, name) => {
   let frameDiv = null // document.getElementById('frame')
   let log = null // document.getElementById('log')
@@ -11,20 +11,20 @@ const sketch = (socket, name) => {
   let backgroundDiv = document.getElementById('background')
   backgroundDiv.style.width = CONSTANTS.WIDTH + 'px'
   backgroundDiv.style.height = CONSTANTS.HEIGHT + 'px'
-  let move = true, mouse, hold = false
+  let move = true, mouse, hold = false, buffer = []
   return (p) => {
     p.setup = function () {
       p.noStroke()
       p.createCanvas(CONSTANTS.CANVAS_WIDTH, CONSTANTS.CANVAS_HEIGHT)
       p.frameRate(CONSTANTS.FRAME_RATE)
-      p.noLoop()
+      // p.noLoop()
 
       socket.on('f', function (data) {
         context = new Context(data, p, log)
       })
       socket.on('c', function (ctx) {
         if (!context) return
-        if (context.fromRemote(ctx)) p.loop()
+        context.fromRemote(ctx)
       })
     }
       
@@ -33,7 +33,6 @@ const sketch = (socket, name) => {
       p.background(0, 0)
       p.fill(255, 255, 255, 255)
       if (context) {
-        // console.log('DRAW', context.d, buffer.length, p.frameRate())
         context.update()
         context.draw(frameDiv, backgroundDiv)
       }
@@ -201,6 +200,7 @@ function init () {
     form.style.display = 'none'
     container.style.display = 'block'
     launchGame(socket, name)
+    console.log('Socket EMIT', name, socket)
     socket.emit('s', name)
   }
 

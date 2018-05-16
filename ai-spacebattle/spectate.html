@@ -3,6 +3,7 @@
   <head>
     <title>ai-spacebattle</title>
     <script>var WIDTH, HEIGHT;</script>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.0/socket.io.js"></script>
     <script src="/js/libraries/d3.v3.min.js"></script>
     <script src="/js/libraries/cola.v3.min.js"></script>
@@ -22,6 +23,7 @@
     <link rel="stylesheet" type="text/css" href="/js/libraries/neataptic/graph.css">
     <link rel="stylesheet" type="text/css" href="/css/styles.css" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    
   </head>
   <body onload="init()" style="overflow: hidden;">
     <div id="container">
@@ -29,6 +31,11 @@
       <div id="game"></div>
     </div>
     <div id="first"></div>
+    <div id="actions">
+      <button type="button" id="obs">OBS</button>
+      <button type="button" id="human">Human</button>
+    </div>
     <svg id="brain" style="display: none;" ondblclick="this.style.display = 'none'"/>
+    <div id="chart"></div>
   </body>
 </html>
