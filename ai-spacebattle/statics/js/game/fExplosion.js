@@ -33,3 +33,5 @@ class Explosion {
     }
   }
 }
+
+if (typeof window === 'undefined') module.exports = Explosion

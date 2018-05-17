@@ -21,3 +21,5 @@ class Element {
     this.context = Object.assign({}, this.context, context)
   }
 }
+
+if (typeof window === 'undefined') module.exports = Element

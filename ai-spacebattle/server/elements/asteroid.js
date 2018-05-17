@@ -31,7 +31,7 @@ module.exports = class Asteroid extends Element {
 
     do {
       this.vel = { x: Math.random() * (Maths.randomInt(1, 4) - 3), y: Math.random() * (Maths.randomInt(1, 4) - 3) }
-    } while (Maths.magnitude(this.vel.x, this.vel.y) < (CONSTANTS.ASTEROID_MAX_SPEED / 3))
+    } while (this.vel.x === 0 || this.vel.y === 0 || Maths.magnitude(this.vel.x, this.vel.y) < (CONSTANTS.ASTEROID_MAX_SPEED / 3))
     if (CONSTANTS.ASTEROID_FIXED) this.vel.x = this.vel.y = 0
   }
 
@@ -46,7 +46,7 @@ module.exports = class Asteroid extends Element {
     this.y = Maths.randomInt(0, CONSTANTS.HEIGHT)
     do {
       this.vel = { x: Math.random() * (Maths.randomInt(1, 4) - 3), y: Math.random() * (Maths.randomInt(1, 4) - 3) }
-    } while (Maths.magnitude(this.vel.x, this.vel.y) < (CONSTANTS.ASTEROID_MAX_SPEED / 3))
+    } while (this.vel.x === 0 || this.vel.y === 0 || Maths.magnitude(this.vel.x, this.vel.y) < (CONSTANTS.ASTEROID_MAX_SPEED / 3))
   }
 
   update (ships) {

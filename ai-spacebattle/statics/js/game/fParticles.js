@@ -42,3 +42,5 @@ class Particle {
     this.renderer.pop()
   }
 }
+
+if (typeof window === 'undefined') module.exports = Particle

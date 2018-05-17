@@ -173,7 +173,7 @@ module.exports = class GameContext {
       bullets = bullets.concat(p.bullets.filter(b => !b.dead()).map(b => {
         return { id: b.id, o: b.owner, x: b.x, y: b.y, vx: b.vel.x, vy: b.vel.y, t: b.target, a: b.rotation }
       }))
-      return { id: p.id, x: p.x, y: p.y, r: p.radius, o: p.owner, c: p.challenger, cl: p.challenge }
+      return { id: p.id, x: p.x, y: p.y, r: p.radius, o: p.owner ? String(p.owner).replace(/[^0-9]/g, '') * 1 : 0, c: p.challenger ? String(p.challenger).replace(/[^0-9]/g, '') * 1 : 0, cl: p.challenge ? p.challenge : 0 }
     })
     const bonuses = this.bonuses.map(s => {
       return { id: s.id, x: s.x, y: s.y }

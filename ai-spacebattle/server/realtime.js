@@ -11,14 +11,14 @@ module.exports = function (io) {
 
   if (!game) {
     game = new Game(io)
-    const name = `./best-brain.bin`
-    const saved = path.resolve(name)
-    if (fs.existsSync(saved)){
-      const data = fs.readFileSync(saved)
-      game.createBots(data)
-    } else {
-      game.createBots()
-    }
+    // const name = `./best-brain.bin`
+    // const saved = path.resolve(name)
+    // if (fs.existsSync(saved)){
+    //   const data = fs.readFileSync(saved)
+    //   game.createBots(data)
+    // } else {
+    //   game.createBots()
+    // }
     game.startIntervals()
     // ga = new Ga(game, 60, 9, io)
     // game.context.setGameOver(ga.endEvolution.bind(ga))
@@ -58,20 +58,11 @@ module.exports = function (io) {
       game.shoot(id, x, y)
     })
 
-    socket.on('l', () => {
-      game.learn()
-    })
-
     socket.on('t', () => {
       game.train()
     })
 
-    socket.on('b', () => {
-      if (ga && ga.bestBrain) socket.emit('brain', ga.bestBrain)
-    })
-
     socket.on('h', (bool) => {
-      console.log('SET HUMAN', bool)
       game.setHuman(bool)
     })
 

@@ -1,6 +1,6 @@
 'use strict';
 
-const neurojs = require('../../../neurojs-master/src/framework')
+const neurojs = require('../neurojs/framework')
 const GameContext = require('./game-context')
 const CONSTANTS = require('../statics/js/constants')
 const nameGenerator = require('./generator')
@@ -44,23 +44,31 @@ module.exports = class Game {
     }
     
     const states = 62
-    const actions = 4
+    const actions = 5
     const temporalWindow = 1
     const input = states + temporalWindow * (states + actions)
     this.bots = []
     this.brains = {
+      // network: new neurojs.Network.Model([
+      //   { type: 'input', size: input },
+      //   { type: 'fc', size: Math.round(input / 2), activation: 'relu' },
+      //   { type: 'fc', size: Math.round(input / 2), activation: 'relu' },
+      //   { type: 'fc', size: Math.round(input / 2), activation: 'relu', dropout: 0.5 },
+      //   { type: 'fc', size: actions, activation: 'tanh' },
+      //   { type: 'regression' }
+      // ]),
       actor: new neurojs.Network.Model([
         { type: 'input', size: input },
-        { type: 'fc', size: 100, activation: 'relu' },
-        { type: 'fc', size: 100, activation: 'relu' },
-        { type: 'fc', size: 100, activation: 'relu', dropout: 0.5 },
+        { type: 'fc', size: Math.round(input / 2), activation: 'relu' },
+        { type: 'fc', size: Math.round(input / 2), activation: 'relu' },
+        { type: 'fc', size: Math.round(input / 2), activation: 'relu', dropout: 0.5 },
         { type: 'fc', size: actions, activation: 'tanh' },
         { type: 'regression' }
       ]),
       critic: new neurojs.Network.Model([
         { type: 'input', size: input + actions },
-        { type: 'fc', size: 200, activation: 'relu' },
-        { type: 'fc', size: 200, activation: 'relu' },
+        { type: 'fc', size: Math.round((input + actions) / 2), activation: 'relu' },
+        { type: 'fc', size: Math.round((input + actions) / 2), activation: 'relu' },
         { type: 'fc', size: 1 },
         { type: 'regression' }
       ])
@@ -68,17 +76,22 @@ module.exports = class Game {
     this.brains.shared = new neurojs.Shared.ConfigPool()
     this.brains.shared.set('actor', this.brains.actor.newConfiguration())
     this.brains.shared.set('critic', this.brains.critic.newConfiguration())
+    // this.brains.shared.set('network', this.brains.network.newConfiguration())
 
     for (let i = 0, input, brain; i < CONSTANTS.MAX_PLAYER; i++) {
       // input = neurojs.Agent.getInputDimension(states, actions, 1) // states inputs, 9 outputs, et... temporal 1... :p
       brain = new neurojs.Agent({
+        type: 'q-learning', // q-learning or sarsa
+        
         actor: savedBrain ? savedBrain.actor.clone() : null,
         critic: savedBrain ? savedBrain.critic : null,
+
+        // network: savedBrain && savedBrain.network ? savedBrain.network.clone() : this.brains.network.newConfiguration(),
 
         states: states,
         actions: actions,
 
-        algorithm: 'ddpg',
+        algorithm: 'ddpg', // ddpg or dqn
 
         temporalWindow: temporalWindow, 
 
@@ -95,6 +108,7 @@ module.exports = class Game {
 
       brain.forTraining = true
 
+      // this.brains.shared.add('network', brain.algorithm.network)
       this.brains.shared.add('actor', brain.algorithm.actor)
       this.brains.shared.add('critic', brain.algorithm.critic)
 
@@ -175,7 +189,7 @@ module.exports = class Game {
       const update = () => {
         // const d = new Date().getTime()
         this.context.update()
-        this.brains.shared.step()
+        // this.brains.shared.step()
         // const f = new Date().getTime()
         // console.log('UPDATE Time:', f - d, 'ms')
       }

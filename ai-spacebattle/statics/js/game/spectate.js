@@ -20,6 +20,10 @@ const sketch = (socket, scale) => {
     human = !human
     socket.emit('h', human)
   })
+  btn = document.getElementById('learn')
+  btn.addEventListener('click', () => {
+    socket.emit('t')
+  })
   const drawChart = (context) => {
     if (!context || !context.s || !context.s.length || !google || !google.visualization || !google.visualization.arrayToDataTable || !google.visualization.LineChart) return
     let sumR = 0, sumL = 0

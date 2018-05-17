@@ -29,7 +29,7 @@ module.exports = class Bullet extends Element {
     if (this.life === 0)
     this.x = x
     this.y = y
-    this.speed = CONSTANTS.BULLET_SPEED / 2.5
+    this.speed = CONSTANTS.SHIP_SPEED
     this.life = CONSTANTS.BULLET_LIFE * 3
     this.target = id
   }

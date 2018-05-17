@@ -3,12 +3,13 @@ const ACTIONS_STRING = [
   'up',
   'right',
   'left',
-  'fire'
+  'fire',
+  'nothing'
 ]
 const clear = require('clear')
 const Element = require('./element')
 const Maths = require('../maths')
-const Bullet = require('./Bullet')
+const Bullet = require('./bullet')
 const CONSTANTS = require('../../statics/js/constants')
 
 module.exports = class Ship extends Element {
@@ -109,6 +110,7 @@ module.exports = class Ship extends Element {
     this.outputs = null
     this.label = null
     this.dead = false
+    // if (this.brain && this.brain.training) this.brain.reset()
   }
 
   oneHotEncode (type){
@@ -124,14 +126,32 @@ module.exports = class Ship extends Element {
     return ACTIONS_STRING[index];
   }
 
+  noPoint () {
+    return this.dead || this.god
+  }
+
+  roundReward (reward) {
+    return Math.round(reward * 1000) / 1000
+  }
+
+  print (lifeReward, scoreReward, velReward) {
+    console.log('REWARDS', this.roundReward(this.reward), this.roundReward(lifeReward), this.roundReward(scoreReward), this.roundReward(velReward))
+  }
+
   think (planets, ships, asteroids, bonuses, bullets) {
+    if (this.collide) {
+      this.obs = []
+      return null
+    }
     // if (this.frames % 4 === 0) {
       let lifeReward = this.dead ? 0 : (this.lastLife === this.life) ? 1 : 1 - Maths.norm(this.lastLife - this.life, 0, 10)
       if (lifeReward < 0) lifeReward = 0
-      const scoreReward = (this.dead || this.collide || this.score < 1 || this.lastScore > this.score) ? 0 : 1 - (1 / this.score)
-      const velReward = (this.dead || this.collide || Maths.magnitude(this.vel.x, this.vel.y) < CONSTANTS.SHIP_SPEED / 2 ) ? 0 : Maths.norm(Maths.magnitude(this.vel.x, this.vel.y), CONSTANTS.SHIP_SPEED / 2, CONSTANTS.SHIP_SPEED)
-      this.reward = Maths.norm(Maths.norm(lifeReward + scoreReward, 0, 2) + velReward, 0, 2)
+      const scoreReward = (this.noPoint() || this.score < 1 || this.lastScore > this.score) ? 0 : 1 - (1 / this.score)
+      const velReward = (this.noPoint() || Maths.magnitude(this.vel.x, this.vel.y) < CONSTANTS.SHIP_SPEED / 2 ) ? 0 : Maths.norm(Maths.magnitude(this.vel.x, this.vel.y), CONSTANTS.SHIP_SPEED / 2, CONSTANTS.SHIP_SPEED)
+      // this.reward = Maths.norm(Maths.norm(lifeReward + scoreReward, 0, 2) + velReward, 0, 2)
+      this.reward = Maths.norm(lifeReward + velReward, 0, 2)
       // this.reward = this.distance / this.frames // Maths.norm(Maths.magnitude(this.vel.x, this.vel.y), 0, CONSTANTS.SHIP_SPEED)
+      // this.print(lifeReward, scoreReward, velReward)
       this.lastLife = this.life * 1
       // console.log('REWARDS', lifeReward, scoreReward, velReward, Maths.magnitude(this.vel.x, this.vel.y))
       if (this.reward > 1 || this.reward < 0) {
@@ -174,13 +194,18 @@ module.exports = class Ship extends Element {
         this.turn(0)
         break;
       case 'left':
+        this.boost()
         this.turn(-CONSTANTS.TURN_ANGLE)
         break;
       case 'right':
+        this.boost()
         this.turn(CONSTANTS.TURN_ANGLE)
         break;
       case 'fire':
+        this.boost()
         this.shoot()
+        break;
+      case 'nothing':
         break;
     }
 
@@ -205,6 +230,24 @@ module.exports = class Ship extends Element {
     if (this.dead) return
     this.rotation += angle
     this.rotation = this.rotation % (2 * Math.PI)
+  }
+
+  move (x, y) {
+    if (this.dead) return
+    this.target = { x, y }
+  }
+
+  shoot (x, y) {
+    if (this.dead) return
+    const bullet = this.bullets.find(b => b.dead())
+    if (bullet && this.btimer === 0) {
+      const x = this.x + this.size * Math.cos(this.rotation)
+      const y = this.y + this.size * Math.sin(this.rotation)
+      bullet.shoot(x, y, this.rotation)
+      this.btimer = CONSTANTS.BULLET_LIFE / 3
+      if (this.brain) this.life -= 0.2
+    }
+    return false
   }
 
   sense (planets, ships, asteroids, bonuses, bullets) {
@@ -345,24 +388,6 @@ module.exports = class Ship extends Element {
     return result
   }
 
-  move (x, y) {
-    if (this.dead) return
-    this.target = { x, y }
-  }
-
-  shoot (x, y) {
-    if (this.dead) return
-    const bullet = this.bullets.find(b => b.dead())
-    if (bullet && this.btimer === 0) {
-      const x = this.x + this.size * Math.cos(this.rotation)
-      const y = this.y + this.size * Math.sin(this.rotation)
-      bullet.shoot(x, y, this.rotation)
-      this.btimer = CONSTANTS.BULLET_LIFE / 3
-      if (this.brain) this.score -= 0.2
-    }
-    return false
-  }
-
   setCollide (collide, life, noGod) {
     if (this.dead) return
     if (this.collide === 0) {
@@ -456,7 +481,7 @@ module.exports = class Ship extends Element {
     }
     if (this.worldCollide()) {
       if (this.brain) {
-        this.setCollide(0, 20, true)
+        this.setCollide(1, 20, true)
       } else {
         this.setCollide(0, 1, true)
       }

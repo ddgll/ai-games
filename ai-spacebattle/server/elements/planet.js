@@ -14,7 +14,7 @@ module.exports = class Planet extends Element {
     this.radius = r
     this.x = x
     this.y = y
-    this.mass = r * 75
+    this.mass = 7500
 
     // console.log('Planet ', id, ' mass:', this.mass)
 
