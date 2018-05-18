@@ -11,19 +11,6 @@ const sketch = (socket, scale) => {
   backgroundDiv.style.height = CONSTANTS.HEIGHT + 'px'
   let firstDiv = document.getElementById('first')
   let move = true, mouse, best, hold = false, xCenter, yCenter, nb = 0, distances = []
-  let btn = document.getElementById('obs')
-  btn.addEventListener('click', () => {
-    obs = !obs
-  })
-  btn = document.getElementById('human')
-  btn.addEventListener('click', () => {
-    human = !human
-    socket.emit('h', human)
-  })
-  btn = document.getElementById('learn')
-  btn.addEventListener('click', () => {
-    socket.emit('t')
-  })
   const drawChart = (context) => {
     if (!context || !context.s || !context.s.length || !google || !google.visualization || !google.visualization.arrayToDataTable || !google.visualization.LineChart) return
     let sumR = 0, sumL = 0
@@ -64,21 +51,17 @@ const sketch = (socket, scale) => {
       let counter = 0
 
       socket.on('f', function (data) {
+        console.log('SET Context')
         context = new Context(data, p)
         context.setBounds(xCenter, yCenter)
-        setFirst(data.context)
-        if (counter++ === 100) {
-          counter = 0
-          drawChart(data.context)
-        }
-        
       })
       socket.on('c', function (ctx) {
         if (!context) return
         context.fromRemote(ctx)
       })
-      socket.on('nb', function (nb_) {
-        nb = nb_
+      socket.on('o', function ({ id, o }) {
+        if (!context) return
+        context.setObs(id, o)
       })
 
       const setFirst = (ctx) => {
@@ -147,7 +130,10 @@ function init () {
     new p5(sketch(socket, scale), 'game')
     setTimeout(() => {
       socket.emit('spectate')
-    }, 1000)
+    }, 500)
+    setTimeout(() => {
+      document.location.reload()
+    }, 1000 * 60 * 10)
   })
 }
 

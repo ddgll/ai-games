@@ -1,9 +1,10 @@
 class Context extends CoreContext {
   constructor (data, p, log) {
     super(data, p, log, CONSTANTS)
+    this.me = data.ship
     for (let i = 0, l = data.context.s.length, s; i < l; i++) {
       s = data.context.s[i]
-      this.ships[s.id] = new Ship(s.id, s.n, { x: s.x, y: s.y, a: s.a, l: s.l, s: s.s, d: s.d, o: s.o, t: s.t, le: s.le, lo: s.lo, re: s.re, g: s.g }, this.renderer, log)
+      this.ships[s.id] = new Ship(s.id, s.n, { x: s.x, y: s.y, vx: s.vx, vy: s.vy, a: s.a, l: s.l, s: s.s, d: s.d, o: s.o, g: s.g }, this.renderer, log)
     }
     for (let i = 0, l = data.context.p.length, p; i < l; i++) {
       p = data.context.p[i]
@@ -17,6 +18,11 @@ class Context extends CoreContext {
       b = data.context.b[i]
       this.bullets[b.id] = new Bullet(b.id, { x: b.x, y: b.y, o: b.o }, this.renderer, this.log)
     }
+  }
+
+  setObs(id, o) {
+    if (typeof this.ships[id] === 'undefined') return
+    this.ships[id].setObs(o)
   }
 
   draw (frameDiv, bgDiv) {
@@ -58,10 +64,6 @@ class Context extends CoreContext {
     this.renderer.rect(this.bounds.xMin, this.bounds.yMin, this.bounds.xMax - this.bounds.xMin, this.bounds.yMax - this.bounds.yMin)
     this.renderer.noStroke()
     let nb = 0
-    for (let id in this.ships) {
-      s = this.ships[id]
-      if (this.onScreen(s.context.x, s.context.y)) s.draw(me)
-    }
     for (let id in this.bullets) {
       s = this.bullets[id]
       if (this.onScreen(s.context.x, s.context.y)) s.draw(me, this.ships)
@@ -82,6 +84,10 @@ class Context extends CoreContext {
           s.draw(me)
         }
       }
+    }
+    for (let id in this.ships) {
+      s = this.ships[id]
+      if (this.onScreen(s.context.x, s.context.y)) s.draw(me)
     }
     for (let i = 0, l = this.explosions.length, s; i < l; i++) {
       this.explosions[i].draw()

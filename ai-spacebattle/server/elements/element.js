@@ -67,7 +67,7 @@ module.exports = class Element {
 					force = p.mass / distSQ,
 					ax = dx / dist * force,
 					ay = dy / dist * force;
-			if (dist < CONSTANTS.PLANET_MAX_RADIUS * .5) {
+			if (dist < CONSTANTS.PLANET_MAX_RADIUS * .75) {
 				this.vel.x -= ax * Math.random();
 				this.vel.y -= ay * Math.random();
 			}

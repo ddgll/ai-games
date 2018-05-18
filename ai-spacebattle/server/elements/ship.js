@@ -113,107 +113,6 @@ module.exports = class Ship extends Element {
     // if (this.brain && this.brain.training) this.brain.reset()
   }
 
-  oneHotEncode (type){
-    const zeros = Array.apply(null, Array(ACTIONS_STRING.length)).map(Number.prototype.valueOf, 0);
-    const index = ACTIONS_STRING.indexOf(type);
-    zeros[index] = 1;
-    return zeros;
-  }
-
-  oneHotDecode (zeros){
-    const max = Math.max.apply(null, zeros);
-    const index = zeros.indexOf(max);
-    return ACTIONS_STRING[index];
-  }
-
-  noPoint () {
-    return this.dead || this.god
-  }
-
-  roundReward (reward) {
-    return Math.round(reward * 1000) / 1000
-  }
-
-  print (lifeReward, scoreReward, velReward) {
-    console.log('REWARDS', this.roundReward(this.reward), this.roundReward(lifeReward), this.roundReward(scoreReward), this.roundReward(velReward))
-  }
-
-  think (planets, ships, asteroids, bonuses, bullets) {
-    if (this.collide) {
-      this.obs = []
-      return null
-    }
-    // if (this.frames % 4 === 0) {
-      let lifeReward = this.dead ? 0 : (this.lastLife === this.life) ? 1 : 1 - Maths.norm(this.lastLife - this.life, 0, 10)
-      if (lifeReward < 0) lifeReward = 0
-      const scoreReward = (this.noPoint() || this.score < 1 || this.lastScore > this.score) ? 0 : 1 - (1 / this.score)
-      const velReward = (this.noPoint() || Maths.magnitude(this.vel.x, this.vel.y) < CONSTANTS.SHIP_SPEED / 2 ) ? 0 : Maths.norm(Maths.magnitude(this.vel.x, this.vel.y), CONSTANTS.SHIP_SPEED / 2, CONSTANTS.SHIP_SPEED)
-      // this.reward = Maths.norm(Maths.norm(lifeReward + scoreReward, 0, 2) + velReward, 0, 2)
-      this.reward = Maths.norm(lifeReward + velReward, 0, 2)
-      // this.reward = this.distance / this.frames // Maths.norm(Maths.magnitude(this.vel.x, this.vel.y), 0, CONSTANTS.SHIP_SPEED)
-      // this.print(lifeReward, scoreReward, velReward)
-      this.lastLife = this.life * 1
-      // console.log('REWARDS', lifeReward, scoreReward, velReward, Maths.magnitude(this.vel.x, this.vel.y))
-      if (this.reward > 1 || this.reward < 0) {
-        console.error('0 > REWARD > 1 !! ARF :(', this.reward, lifeReward, scoreReward, velReward)
-      }
-      this.lastScore = this.score * 1.00
-      if (this.dead) this.reset(planets)
-      this.obs = this.sense(planets, ships, asteroids, bonuses, bullets)
-      const vel = Math.sqrt(2) * (CONSTANTS.SHIP_SPEED*2)
-      const inputs = [
-        Maths.norm(this.rotation, -Math.PI * 2, Math.PI * 2), // 0
-        Maths.norm(this.vel.x, -vel, vel), // 1
-        Maths.norm(this.vel.y, -vel, vel), // 2
-        Maths.norm(this.gra.x, -vel, vel), // 3
-        Maths.norm(this.gra.y, -vel, vel), // 4
-        this.collide > 0 ? 1.00 : .00 // 56
-      ].concat(this.obs)
-      this.loss = this.brain.learn(this.reward)
-      this.outputs = this.brain.policy(inputs)
-      this.outputs = this.outputs.map(o => {
-        const oo = (o + 1) / 2
-        if (oo < 0 || oo > 1) console.error('OUTPUT !!!', oo)
-        return oo
-      })
-      // console.log('inputs', inputs)
-      this.label = this.oneHotDecode(this.outputs)
-      // console.log(this.outputs, this.label)
-    // }
-    if (this.label) this.action(this.label)
-    return null
-  }
-
-  action (label) {
-    // console.log('ACTION', label)
-    this.vel.x *= CONSTANTS.AIR_RESISTENCE
-    this.vel.y *= CONSTANTS.AIR_RESISTENCE
-    switch (label) {
-      case 'up':
-        this.boost()
-        this.turn(0)
-        break;
-      case 'left':
-        this.boost()
-        this.turn(-CONSTANTS.TURN_ANGLE)
-        break;
-      case 'right':
-        this.boost()
-        this.turn(CONSTANTS.TURN_ANGLE)
-        break;
-      case 'fire':
-        this.boost()
-        this.shoot()
-        break;
-      case 'nothing':
-        break;
-    }
-
-    if (Maths.magnitude(this.vel.x, this.vel.y) > (CONSTANTS.SHIP_SPEED)) {
-      this.vel = Maths.magnitude(this.vel.x, this.vel.y, CONSTANTS.SHIP_SPEED)
-    }
-  }
-
   boost () {
     if (this.dead) return
     this.vel.x += Math.cos(this.rotation) * CONSTANTS.BOOST_FORCE
@@ -232,7 +131,7 @@ module.exports = class Ship extends Element {
     this.rotation = this.rotation % (2 * Math.PI)
   }
 
-  move (x, y) {
+  move (x, y, o) {
     if (this.dead) return
     this.target = { x, y }
   }
@@ -245,147 +144,9 @@ module.exports = class Ship extends Element {
       const y = this.y + this.size * Math.sin(this.rotation)
       bullet.shoot(x, y, this.rotation)
       this.btimer = CONSTANTS.BULLET_LIFE / 3
-      if (this.brain) this.life -= 0.2
+      this.life -= 0.2
     }
     return false
-  }
-
-  sense (planets, ships, asteroids, bonuses, bullets) {
-    const obs = {
-      planets: [],
-      ships: [],
-      asteroids: [],
-      bullets: [],
-      bonuses: []
-    }
-    let result = []
-    const sort = (a, b) => a.d - b.d
-    const reduce = (a, b) => a.concat(b)
-    const vels = Math.sqrt(2) * (CONSTANTS.SHIP_SPEED*2)
-    const vela = Math.sqrt(2) * (CONSTANTS.ASTEROID_MAX_SPEED*2)
-    const velb = Math.sqrt(2) * (CONSTANTS.BULLET_SPEED*2)
-    let d, x, y, r, an, ow, sei, min = Infinity
-    planets.forEach(p => {
-      x = p.x - this.x
-      y = p.y - this.y
-      r = p.radius
-      d = Maths.distance(0, 0, x, y)
-      ow = p.owner === this.id ? 1 : p.challenger === this.id ? p.challenge / 100 : 0
-      sei = this.seight * 4
-      if (d < sei) obs.planets.push({
-        d: d,
-        data: [
-        Maths.norm(x, -sei, sei), // 0 - 4
-        Maths.norm(y, -sei, sei), // 1 - 5
-        Maths.norm(r, CONSTANTS.PLANET_MIN_RADIUS, CONSTANTS.PLANET_MAX_RADIUS), // 2 - 6
-        ow === this.id ? 1 : 0 // 3 - 7
-      ]})
-    })
-    obs.planets.sort(sort)
-    while (obs.planets.length < 2) obs.planets.push({ d: 0, data: [ 1, 1, 0, 0 ] })
-    result = result.concat(obs.planets.slice(0, 2).map(d => d.data).reduce(reduce)) // 8
-    if (CONSTANTS.SHIP_SEE_SHIP) {
-      ships.forEach(s => {
-        if (s.id === this.id) return
-        x = s.x - this.x
-        y = s.y - this.y
-        d = Maths.distance(0, 0, x, y)
-        if (d < this.seight) obs.ships.push({
-          d: d,
-          data: [
-          Maths.norm(x, -this.seight, this.seight), // 8 - 14
-          Maths.norm(y, -this.seight, this.seight), // 9 - 15
-          Maths.norm(s.rotation, -Math.PI * 2, Math.PI * 2), // 10 - 16
-          Maths.norm(s.vel.x, -vels, vels), // 11 - 17
-          Maths.norm(s.vel.y, -vels, vels), // 12 - 18
-          s.collide ? 1 : 0 // 13 - 19
-        ]})
-      })
-      obs.ships.sort(sort)
-    }
-    while (obs.ships.length < 2) obs.ships.push({ d: 0, data: [ 1, 1, 0, 0, 0, 0 ] })
-    result = result.concat(obs.ships.slice(0, 2).map(d => d.data).reduce(reduce)) // 10
-    asteroids.forEach(a => {
-      x = a.x - this.x
-      y = a.y - this.y
-      d = Maths.distance(0, 0, x, y)
-      an = Maths.angleBetween(0, 0, x, y)
-      if (d < this.seight && d < min) obs.asteroids.push({d: d, data: [
-        Maths.norm(x, -this.seight, this.seight), // 20 - 24
-        Maths.norm(y, -this.seight, this.seight), // 21 - 25
-        Maths.norm(a.vel.x, -vela, vela), // 22 - 26
-        Maths.norm(a.vel.y, -vela, vela), // 23 - 27
-      ]})
-    })
-    obs.asteroids.sort(sort)
-    while (obs.asteroids.length < 2) obs.asteroids.push({ d: 0, data: [ 1, 1, 0, 0 ] })
-    result = result.concat(obs.asteroids.slice(0, 2).map(d => d.data).reduce(reduce)) // 6
-    bonuses.forEach(b => {
-      x = b.x - this.x
-      y = b.y - this.y
-      d = Maths.distance(0, 0, x, y)
-      an = Maths.angleBetween(0, 0, x, y)
-      if (d < this.seight) obs.bonuses.push({
-        d: d,
-        data: [
-        Maths.norm(x, -this.seight, this.seight), // 28 - 30
-        Maths.norm(y, -this.seight, this.seight) // 29 - 31
-      ]})
-    })
-    obs.bonuses.sort(sort)
-    while (obs.bonuses.length < 2) obs.bonuses.push({ d: 0, data: [ 1, 1 ] })
-    result = result.concat(obs.bonuses.slice(0, 2).map(d => d.data).reduce(reduce)) // 4
-    const reg = /^s[0-9]+$/
-    const regrep = /[^0-9]/g
-    bullets.forEach(b => {
-      if (reg.test(b.o) && b.o.replace(regrep, '') === this.id.replace(regrep, '')) return
-      x = b.x - this.x
-      y = b.y - this.y
-      d = Maths.distance(0, 0, x, y)
-      an = Maths.angleBetween(0, 0, x, y)
-      if (d < this.seight) obs.bullets.push({
-        d: d,
-        data: [
-        Maths.norm(x, -this.seight, this.seight), // 32 - 36 - 40 - 44
-        Maths.norm(y, -this.seight, this.seight), // 33 - 37 - 41 - 45
-        Maths.norm(b.vx, -velb, velb), // 34 - 38 - 42 - 46
-        Maths.norm(b.vy, -velb, velb), // 35 - 39 - 43 - 47
-      ]})
-    })
-    obs.bullets.sort(sort)
-    while (obs.bullets.length < 4) obs.bullets.push({ d: 0, data: [ 1, 1, 0, 0 ] })
-    const zero = Maths.norm(0, -this.seight, this.seight)
-    result = result.concat(obs.bullets.slice(0, 4).map(d => d.data).reduce(reduce)) // 8
-    d = Maths.distance(this.x, this.y, 0, this.y)
-    an = Maths.angleBetween(this.x, this.y, 0, this.y)
-    if (d < this.seight) {
-      result = result.concat([Maths.norm(-this.x, -this.seight, this.seight), zero]) // 48 - 49
-    } else {
-      result = result.concat([1, 1])
-    }
-    d = Maths.distance(this.x, this.y, CONSTANTS.WIDTH, this.y)
-    an = Maths.angleBetween(this.x, this.y, CONSTANTS.WIDTH, this.y)
-    if (d < this.seight) {
-      result = result.concat([Maths.norm(CONSTANTS.WIDTH - this.x, -this.seight, this.seight), zero]) // 50 - 51
-    } else {
-      result = result.concat([1, 1])
-    }
-    d = Maths.distance(this.x, this.y, this.x, 0)
-    an = Maths.angleBetween(this.x, this.y, this.x, 0)
-    if (d < this.seight) {
-      result = result.concat([zero, Maths.norm(-this.y, -this.seight, this.seight)]) // 52 - 53
-    } else {
-      result = result.concat([1, 1])
-    }
-    d = Maths.distance(this.x, this.y, this.x, CONSTANTS.HEIGHT)
-    an = Maths.angleBetween(this.x, this.y, this.x, CONSTANTS.HEIGHT)
-    if (d < this.seight) {
-      result = result.concat([zero, Maths.norm(CONSTANTS.HEIGHT - this.y, -this.seight, this.seight)]) // 54 - 55
-    } else {
-      result = result.concat([1, 1])
-    }
-    if (result.length !== 56) console.log('RESULT !== 56', result.length)
-    return result
   }
 
   setCollide (collide, life, noGod) {
@@ -396,7 +157,6 @@ module.exports = class Ship extends Element {
         if (!noGod) this.god = 20
       }
     }
-    if (this.brain) this.score -= collide
     this.collide = collide
   }
 
@@ -406,25 +166,17 @@ module.exports = class Ship extends Element {
     this.frames++
     this.angleFrames++
     if (this.god > 0) this.god--
-    if (this.brain) {
-      this.target = this.think(planets, ships, asteroids, bonuses, bullets)
-    }
     if (this.target) {
       this.vel = { x: 0, y: 0 }
       let distance
-      if (!this.brain) {
-        let xCenter = CONSTANTS.CANVAS_WIDTH / 2
-        let yCenter = CONSTANTS.CANVAS_HEIGHT / 2
-        if (this.x < CONSTANTS.CANVAS_WIDTH / 2) xCenter = this.x
-        if (this.x > CONSTANTS.WIDTH - CONSTANTS.CANVAS_WIDTH / 2) xCenter = CONSTANTS.CANVAS_WIDTH - CONSTANTS.WIDTH + this.x
-        if (this.y < CONSTANTS.CANVAS_HEIGHT / 2) yCenter = this.y
-        if (this.y > CONSTANTS.HEIGHT - CONSTANTS.CANVAS_HEIGHT / 2) yCenter = CONSTANTS.CANVAS_HEIGHT - CONSTANTS.HEIGHT + this.y
-        this.rotation = Maths.angleBetween(xCenter, yCenter, this.target.x, this.target.y)
-        distance = Maths.distance(xCenter, yCenter, this.target.x, this.target.y)
-      } else {
-        this.rotation = Maths.angleBetween(0, 0, this.target.x, this.target.y)
-        distance = Maths.distance(0, 0, this.target.x, this.target.y)
-      }
+      let xCenter = CONSTANTS.CANVAS_WIDTH / 2
+      let yCenter = CONSTANTS.CANVAS_HEIGHT / 2
+      if (this.x < CONSTANTS.CANVAS_WIDTH / 2) xCenter = this.x
+      if (this.x > CONSTANTS.WIDTH - CONSTANTS.CANVAS_WIDTH / 2) xCenter = CONSTANTS.CANVAS_WIDTH - CONSTANTS.WIDTH + this.x
+      if (this.y < CONSTANTS.CANVAS_HEIGHT / 2) yCenter = this.y
+      if (this.y > CONSTANTS.HEIGHT - CONSTANTS.CANVAS_HEIGHT / 2) yCenter = CONSTANTS.CANVAS_HEIGHT - CONSTANTS.HEIGHT + this.y
+      this.rotation = Maths.angleBetween(xCenter, yCenter, this.target.x, this.target.y)
+      distance = Maths.distance(xCenter, yCenter, this.target.x, this.target.y)
       if (distance > this.minMoveDistance) {
         const vX = Math.cos(this.rotation) * this.speed * Math.min(distance, this.maxAcceleration)
         const vY = Math.sin(this.rotation) * this.speed * Math.min(distance, this.maxAcceleration)
@@ -435,13 +187,15 @@ module.exports = class Ship extends Element {
       }
     }
 
-    if (Maths.magnitude(this.vel.x, this.vel.y) < 1e-8 && this.brain) this.score--
+    if (Maths.magnitude(this.vel.x, this.vel.y) < 1e-8 && this.score > 0) {
+      this.score--
+      this.life--
+    }
 
     if (this.score < 0) this.life--
 
     for (let i = 0, l = planets.length, p; i < l; i++) {
       p = planets[i]
-      if (p.owner === this.id) continue
       this.gravitateTo(p)
     }
 
@@ -460,32 +214,27 @@ module.exports = class Ship extends Element {
       r = p.radius / 2
       if (this.circleCollide(x, y, r)) {
         if (p.owner === this.id) {
-          this.setCollide(2, 1)
+          this.setCollide(5, 10)
         } else {
-          this.setCollide(20, 2)
+          this.setCollide(20, 20)
         }
         break
       }
     }
-    if (CONSTANTS.SHIP_SEE_SHIP) {
-      for (let i = 0, l = ships.length, x, y, s, d; i < l; i++) {
-        s = ships[i]
-        if (s.id === this.id) continue
-        x = s.x
-        y = s.y
-        if (this.shipCollide(x, y)) {
-          this.setCollide(15, 2)
-          break
-        }
-      }
+    for (let i = 0, l = ships.length, x, y, s, d; i < l; i++) {
+      s = ships[i]
+      if (s.id === this.id) continue
+      x = s.x
+      y = s.y
+      if (this.shipCollide(x, y)) this.setCollide(5, 5)
     }
-    if (this.worldCollide()) {
-      if (this.brain) {
-        this.setCollide(1, 20, true)
-      } else {
-        this.setCollide(0, 1, true)
-      }
+    for (let i = 0, l = asteroids.length, x, y, a, d; i < l; i++) {
+      a = asteroids[i]
+      x = a.x
+      y = a.y
+      if (this.circleCollide(x, y, CONSTANTS.ASTEROID_RADIUS)) this.setCollide(5, 20)
     }
+    if (this.worldCollide()) this.setCollide(2, 5, true)
     if (this.collide) {
       this.x -= this.vel.x * 2
       this.y -= this.vel.y * 2

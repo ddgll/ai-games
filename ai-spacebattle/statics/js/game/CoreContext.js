@@ -7,7 +7,6 @@ class CoreContext {
     this.planets = {}
     this.asteroids = {}
     this.log = log
-    this.me = data.ship
     this.explosions = []
     this.id = data.context.id
     this.last = data.context.t
@@ -74,6 +73,11 @@ class CoreContext {
       const changes = this.buffer.shift()
       if (this.id < changes.id && changes.d && changes.d.length) {
         this.id = changes.id
+        const sids = Object.values(this.ships).map(s => s.id)
+        const bids = Object.values(this.bullets).map(b => b.id)
+        const csids = []
+        const cbids = []
+        let idx
         // this.debug('<pre>' + JSON.stringify(changes, null, 2) + '</pre>', true)
         changes.d.forEach(diff => {
           const data = String(diff).split('|')
@@ -81,10 +85,10 @@ class CoreContext {
             const object = data[0]
             switch (object) {
               case 's':
-                this.updateShip(data)
+                csids.push(this.updateShip(data, sids))
                 break;
               case 'b':
-                this.updateBullet(data)
+                cbids.push(this.updateBullet(data, bids))
                 break;
               case 'a':
                 this.updateAsteroid(data)
@@ -97,19 +101,32 @@ class CoreContext {
             this.debug('WRONG Data' + JSON.stringify(data))
           }
         })
+        sids.forEach(id => {
+          idx = csids.indexOf(id)
+          if (idx < 0) {
+            // console.log('REMOVE SHIP', id)
+            delete this.ships[id]
+          }
+        })
+        bids.forEach(id => {
+          idx = cbids.indexOf(id)
+          if (idx < 0) {
+            // console.log('REMOVE BULLET', id)
+            delete this.bullets[id]
+          }
+        })
       }
     }
-    if (this.me && this.me.id && typeof this.ships[this.me.id] !== 'undefined') this.me = this.ships[this.me.id]
+    return Object.values(this.ships).map(s => +s.id)
   }
   
   updateShip (data) {
     const type = data[1]
     const id = data[2]
-    const meid = this.me && this.me.id ? this.me.id : null
     this.debug('Update ship! <pre>' + JSON.stringify(data, null, true) + '</pre>', true)
     switch (type) {
       case 'a': {
-        if (data.length === 10) {
+        if (data.length === 12) {
           const n = data[3]
           const x = data[4]
           const y = data[5]
@@ -117,47 +134,41 @@ class CoreContext {
           const l = data[7]
           const s = data[8]
           const g = data[9]
+          const vx = data[10]
+          const vy = data[11]
           if (typeof this.ships[id] === 'undefined') {
             if (!this.element) {
-              this.ships[id] = new Ship(id, n, { x, y, a, s, l, g }, this.renderer, this.log, meid)
+              this.ships[id] = new Ship(id, n, { x, y, a, s, l, g, vx, vy }, this.renderer, this.log)
             } else {
-              this.ships[id] = new this.element(id, { x, y, a, s, l, g }, this.renderer, this.log, meid)
+              this.ships[id] = new this.element(id, { x, y, a, s, l, g, vx, vy }, this.renderer, this.log)
             }
-            this.debug('Add ship ' + id)
           }
         }
       }
       case 'm': {
-        if (data.length === 9) {
+        if (data.length === 11) {
           const x = data[3]
           const y = data[4]
           const a = data[5]
           const l = data[6]
           const s = data[7]
           const g = data[8]
+          const vx = data[9]
+          const vy = data[10]
           if (typeof this.ships[id] !== 'undefined') {
-            this.ships[id].update({ x, y, a, s, l, g })
-            // this.debug('Update ship ' + id, true)
+            // console.log('UPDATE SHIP', x, y)
+            this.ships[id].update({ x, y, a, s, l, g, vx, vy })
           } else {
             if (!this.element) {
-              this.ships[id] = new Ship(id, 'John Doe', { x, y, a, s, l, g }, this.renderer, this.log, meid)
+              this.ships[id] = new Ship(id, 'John Doe', { x, y, a, s, l, g, vx, vy }, this.renderer, this.log)
             } else {
-              this.ships[id] = new this.element(id, { x, y, a, s, l, g }, this.renderer, this.log, meid)
+              this.ships[id] = new this.element(id, { x, y, a, s, l, g, vx, vy }, this.renderer, this.log)
             }
-            this.debug('Add ship ' + id)
           }
-        }
-      }
-      case 'd': {
-        if (data.length === 3 && typeof this.ships[id] !== 'undefined') {
-          if (this.renderer) {
-            this.explosions.push(new Explosion(parseFloat(this.ships[id].context.x), parseFloat(this.ships[id].context.y), this.renderer))
-          }
-          delete this.ships[id]
-          this.debug('Delete ship ' + id)
         }
       }
     }
+    return id
   }
   
   updateBullet (data) {
@@ -172,11 +183,10 @@ class CoreContext {
           const o = data[5]
           if (typeof this.bullets[id] === 'undefined') {
             if (!this.element) {
-              this.bullets[id] = new Bullet(id, { x, y, o }, this.renderer, this.log, this.me)
+              this.bullets[id] = new Bullet(id, { x, y, o }, this.renderer, this.log)
             } else {
-              this.bullets[id] = new this.element(id, { x, y, o }, this.renderer, this.log, this.me)
+              this.bullets[id] = new this.element(id, { x, y, o }, this.renderer, this.log)
             }
-            this.debug('Add bullet ' + id)
           }
         }
       }
@@ -190,21 +200,15 @@ class CoreContext {
             // this.debug('Update ship ' + id, true)
           } else {
             if (!this.element) {
-              this.bullets[id] = new Bullet(id, { x, y, o }, this.renderer, this.log, this.me)
+              this.bullets[id] = new Bullet(id, { x, y, o }, this.renderer, this.log)
             } else {
-              this.bullets[id] = new this.element(id, { x, y, o }, this.renderer, this.log, this.me)
+              this.bullets[id] = new this.element(id, { x, y, o }, this.renderer, this.log)
             }
-            this.debug('Add ship ' + id)
           }
         }
       }
-      case 'd': {
-        if (data.length === 3 && typeof this.bullets[id] !== 'undefined') {
-          delete this.bullets[id]
-          this.debug('Delete bullet ' + id)
-        }
-      }
     }
+    return id
   }
   
   updateAsteroid (data) {

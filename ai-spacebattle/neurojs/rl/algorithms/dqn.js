@@ -30,7 +30,7 @@ class DQN extends Algorithm {
 		this.net.configuration.useOptimizer({
 			type: 'descent',
 			method: 'adadelta',
-            regularization: { l2: 1e-3 }
+      regularization: { l2: 1e-3 }
 		})
 
 		// agent

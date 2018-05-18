@@ -51,12 +51,10 @@ module.exports = class Planet extends Element {
       y = s.y
       d = Maths.distance(this.x, this.y, x, y)
       if (d < this.view) {
-        if (d < (this.radius / 2)) {
-          if (this.x + this.radius + 20 > CONSTANTS.WIDTH) {
-            s.x = this.x - this.radius - 20
-          } else {
-            s.x = this.x + this.radius + 20
-          }
+        if (d < ((this.radius / 2) - 2)) {
+          const tmp = Maths.magnitude(s.x - this.x, s.y - this.y, d + 10)
+          s.x += tmp.x
+          s.y += tmp.y
         }
         if (d < minimum) {
           minimum = d

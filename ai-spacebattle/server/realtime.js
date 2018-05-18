@@ -11,19 +11,7 @@ module.exports = function (io) {
 
   if (!game) {
     game = new Game(io)
-    // const name = `./best-brain.bin`
-    // const saved = path.resolve(name)
-    // if (fs.existsSync(saved)){
-    //   const data = fs.readFileSync(saved)
-    //   game.createBots(data)
-    // } else {
-    //   game.createBots()
-    // }
     game.startIntervals()
-    // ga = new Ga(game, 60, 9, io)
-    // game.context.setGameOver(ga.endEvolution.bind(ga))
-    // ga.startEvolution()
-    // game.startIntervals()
   }
   
   return function (socket) {
@@ -54,26 +42,18 @@ module.exports = function (io) {
       game.moveShip(id, x, y)
     })
 
+    socket.on('mo', ({ c: [x, y], o }) => {
+      game.moveShip(id, x, y)
+      io.emit('o', { id, o })
+    })
+
+    socket.on('d', (id) => {
+      const exists = game.exists(id)
+      console.log('CHECK Existance', id, exists)
+    })
+
     socket.on('c', ([x, y]) => {
       game.shoot(id, x, y)
     })
-
-    socket.on('t', () => {
-      game.train()
-    })
-
-    socket.on('h', (bool) => {
-      game.setHuman(bool)
-    })
-
-    // socket.on('u', () => {
-    //   game.context.update()
-    // })
-
-    // socket.on('s', () => {
-    //   const window = game.context.getWindow()
-    //   console.log('SEND Window', window)
-    //   io.of('/').emit('c', window)
-    // })
   }
 }

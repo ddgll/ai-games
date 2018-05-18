@@ -57,6 +57,15 @@ module.exports = class GameContext {
     this.sids = 1
   }
 
+  exists (id) {
+    const index = this.ships.findIndex(s => s.id === id)
+    if (index < 0) {
+      return false
+      this.io.emit('die', id)
+    }
+    return true
+  }
+
   update () {
     const ctx = this.getContext()
     if (this.snapshot) {
@@ -87,23 +96,16 @@ module.exports = class GameContext {
     for (let i = 0, l = this.ships.length, s; i < l; i++) {
       s = this.ships[i]
       s.update(this.planets, this.ships, this.asteroids, this.bonuses, ctx.b)
-      if (s.brain && s.score > this.bestScore) {
-        if (s.score > this.bestScore + 100) {
-          this.first = s
-          const d = new Date()
-          const binary = s.brain.export()
-          const name = `./brains/brain-${d.getTime()}-${Math.round(this.bestScore)}.bin`
-          const bestname = `./best-brain.bin`
-          const blob = new DataView(binary).buffer
-          fs.writeFile(path.resolve(name), new Buffer(blob), () => {})
-          fs.writeFile(path.resolve(bestname), new Buffer(blob), () => {})
-          console.log('SAVE New best score', s.score)
-        }
+      if (s.score > this.bestScore) {
+        this.first = s
         this.bestScore = s.score
       }
     }
     for (let i = 0, l = this.asteroids.length; i < l; i++) this.asteroids[i].update(this.ships)
-    this.ships = this.ships.filter(s => s.life > 0 || s.brain)
+    this.ships = this.ships.map(s => {
+      if (s.life < 0 || s.dead) this.io.emit('die', s.id)
+      return s
+    }).filter(s => s.life > 0)
     if (this.ships.filter(s => s.brain !== null).length === 0 && typeof this.gameover === 'function') this.gameover(this.counter)
   }
 
@@ -117,17 +119,16 @@ module.exports = class GameContext {
       s = ships[i]
       const idx = sIds.indexOf(s.id)
       if (idx < 0) {
-        diffs.push(`s|a|${s.id}|${s.n}|${s.x}|${s.y}|${s.a}|${s.l}|${s.s}|${s.g}`)
+        diffs.push(`s|a|${s.id}|${s.n}|${s.x}|${s.y}|${s.a}|${s.l}|${s.s}|${s.g}|${s.vx}|${s.vy}`)
       } else {
-        const sS = sShips[idx]
-        if (sS.x !== s.x || sS.y !== s.y || sS.a !== s.a || sS.l !== s.l || sS.g !== s.g)  diffs.push(`s|m|${s.id}|${s.x}|${s.y}|${s.a}|${s.l}|${s.s}|${s.g}`)
+        diffs.push(`s|m|${s.id}|${s.x}|${s.y}|${s.a}|${s.l}|${s.s}|${s.g}|${s.vx}|${s.vy}`)
       }
     }
-    for (let i = 0, l = sShips.length, sS; i < l; i++) {
-      sS = sShips[i]
-      const idx = ids.indexOf(sS.id)
-      if (idx < 0) diffs.push(`s|d|${sS.id}`)
-    }
+    // for (let i = 0, l = sShips.length, sS; i < l; i++) {
+    //   sS = sShips[i]
+    //   const idx = ids.indexOf(sS.id)
+    //   if (idx < 0) diffs.push(`s|d|${sS.id}`)
+    // }
     return diffs
   }
 
@@ -138,19 +139,20 @@ module.exports = class GameContext {
     const ids = bullets.map(s => s.id)
     for (let i = 0, l = bullets.length, b; i < l; i++) {
       b = bullets[i]
+      if (b.l <= 0) continue
       const idx = sIds.indexOf(b.id)
       if (idx < 0) {
         diffs.push(`b|a|${b.id}|${b.x}|${b.y}|${b.o}`)
       } else {
         const sB = sBullets[idx]
-        if (sB.x !== b.x || sB.y !== b.y)  diffs.push(`b|m|${b.id}|${b.x}|${b.y}|${b.o}`)
+        diffs.push(`b|m|${b.id}|${b.x}|${b.y}|${b.o}`)
       }
     }
-    for (let i = 0, l = sBullets.length, sB; i < l; i++) {
-      sB = sBullets[i]
-      const idx = ids.indexOf(sB.id)
-      if (idx < 0) diffs.push(`b|d|${sB.id}`)
-    }
+    // for (let i = 0, l = sBullets.length, sB; i < l; i++) {
+    //   sB = sBullets[i]
+    //   const idx = ids.indexOf(sB.id)
+    //   if (idx < 0) diffs.push(`b|d|${sB.id}`)
+    // }
     return diffs
   }
 
@@ -167,7 +169,7 @@ module.exports = class GameContext {
       bullets = bullets.concat(s.bullets.filter(b => !b.dead()).map(b => {
         return { id: b.id, o: b.owner, x: b.x, y: b.y, vx: b.vel.x, vy: b.vel.y, a: b.rotation }
       }))
-      return { id: s.id, n: s.name, x: s.x, y: s.y, a: s.rotation, s: s.score, d: s.distance, l: s.life, g: (s.god > 0) ? 1 : 0, o: s.obs, le: s.brain && s.brain.learning && s.brain.training ? 1 : 0, lo: isNaN(s.loss) ? 0 : s.loss, re: s.reward, g: s.god }
+      return { id: s.id, n: s.name, x: s.x, y: s.y, a: s.rotation, s: s.score, vx: s.vel.x, vy: s.vel.y, d: s.distance, l: s.life, g: (s.god > 0) ? 1 : 0 }
     })
     const planets = this.planets.map(p => {
       bullets = bullets.concat(p.bullets.filter(b => !b.dead()).map(b => {
@@ -195,7 +197,7 @@ module.exports = class GameContext {
       do{
         x = Maths.randomInt(0+CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.WIDTH-CONSTANTS.PLANET_MAX_RADIUS)
         y = Maths.randomInt(0+CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.HEIGHT-CONSTANTS.PLANET_MAX_RADIUS)
-      } while(this.notToClose({ x, y }, CONSTANTS.PLANET_MAX_RADIUS))
+      } while(this.notToClose({ x, y }, CONSTANTS.PLANET_MAX_RADIUS / 2))
     } else {
       x = 30
       y = 30
@@ -284,7 +286,7 @@ module.exports = class GameContext {
   };
 
   isClose (item, items, min, notSameId) {
-    const boundMin = min
+    const boundMin = min / 2
     for(let i = 0, l = items.length, p, d, d1, d2, d3, d4, d5; i < l; i++){
       p = items[i];
       if(!notSameId || item.id != p.id){
@@ -294,10 +296,10 @@ module.exports = class GameContext {
         d3 = Maths.distance(item.x, item.y, 0, item.y);
         d4 = Maths.distance(item.x, item.y, CONSTANTS.WIDTH, item.y);
         if( d < min || 
-            d1 < CONSTANTS.PLANET_MAX_RADIUS ||
-            d2 < CONSTANTS.PLANET_MAX_RADIUS ||
-            d3 < CONSTANTS.PLANET_MAX_RADIUS ||
-            d4 < CONSTANTS.PLANET_MAX_RADIUS
+            d1 < boundMin ||
+            d2 < boundMin ||
+            d3 < boundMin ||
+            d4 < boundMin
           ) return true
       }
     }

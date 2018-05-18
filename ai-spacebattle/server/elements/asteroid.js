@@ -51,15 +51,6 @@ module.exports = class Asteroid extends Element {
 
   update (ships) {
     super.update()
-    for (let i = 0, l = ships.length, x, y, s; i < l; i++) {
-      s = ships[i]
-      x = s.x
-      y = s.y
-      if (this.shipCollide(x, y, CONSTANTS.SHIP_SIZE)) {
-        s.setCollide(5, 2)
-        break
-      }
-    }
     if (Maths.magnitude(this.vel.x, this.vel.y) > CONSTANTS.ASTEROID_MAX_SPEED) {
       this.vel = Maths.magnitude(this.vel.x, this.vel.y, CONSTANTS.ASTEROID_MAX_SPEED)
     }
