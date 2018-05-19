@@ -42,6 +42,11 @@ module.exports = class Ship extends Element {
     this.oldX = null
     this.oldY = null
 
+    this.isBooting = false
+    this.turning = 0
+
+    this.beforeAngle = 0
+
     this.name = name
     this.life = CONSTANTS.MAX_LIFE
     this.lastLife = CONSTANTS.MAX_LIFE
@@ -127,13 +132,18 @@ module.exports = class Ship extends Element {
 
   turn (angle) {
     if (this.dead) return
-    this.rotation += angle
-    this.rotation = this.rotation % (2 * Math.PI)
+    this.turning += angle
   }
 
   move (x, y, o) {
     if (this.dead) return
     this.target = { x, y }
+  }
+
+  moveKeyboard (boosting, angle) {
+    if (this.dead) return
+    this.isBooting = boosting
+    this.turn(angle)
   }
 
   shoot (x, y) {
@@ -144,82 +154,98 @@ module.exports = class Ship extends Element {
       const y = this.y + this.size * Math.sin(this.rotation)
       bullet.shoot(x, y, this.rotation)
       this.btimer = CONSTANTS.BULLET_LIFE / 3
-      this.life -= 0.2
+      if (CONSTANTS.TRAINING) this.life -= 0.2
     }
     return false
+  }
+
+  invert(x, y) {
+    const cos = Math.cos(Math.PI),
+        sin = Math.sin(Math.PI),
+        nx = (cos * (x)) + (sin * (y)),
+        ny = (cos * (y)) - (sin * (x));
+    return { x: nx, y: ny };
   }
 
   setCollide (collide, life, noGod) {
     if (this.dead) return
     if (this.collide === 0) {
+      this.beforeAngle = this.rotation * 1.00
       if (this.god === 0) {
         this.life -= life * CONSTANTS.DIFFICULTY
-        if (!noGod) this.god = 20
+        if (!noGod) this.god = 50
       }
     }
     this.collide = collide
   }
 
   update (planets, ships, asteroids, bonuses, bullets) {
-    if (this.dead && !this.brain) return
+    if (this.dead && !CONSTANTS.TRAINING) return
+    if (this.dead) {
+      this.reset()
+    }
     super.update()
     this.frames++
     this.angleFrames++
     if (this.god > 0) this.god--
-    if (this.target) {
-      this.vel = { x: 0, y: 0 }
-      let distance
-      let xCenter = CONSTANTS.CANVAS_WIDTH / 2
-      let yCenter = CONSTANTS.CANVAS_HEIGHT / 2
-      if (this.x < CONSTANTS.CANVAS_WIDTH / 2) xCenter = this.x
-      if (this.x > CONSTANTS.WIDTH - CONSTANTS.CANVAS_WIDTH / 2) xCenter = CONSTANTS.CANVAS_WIDTH - CONSTANTS.WIDTH + this.x
-      if (this.y < CONSTANTS.CANVAS_HEIGHT / 2) yCenter = this.y
-      if (this.y > CONSTANTS.HEIGHT - CONSTANTS.CANVAS_HEIGHT / 2) yCenter = CONSTANTS.CANVAS_HEIGHT - CONSTANTS.HEIGHT + this.y
-      this.rotation = Maths.angleBetween(xCenter, yCenter, this.target.x, this.target.y)
-      distance = Maths.distance(xCenter, yCenter, this.target.x, this.target.y)
-      if (distance > this.minMoveDistance) {
-        const vX = Math.cos(this.rotation) * this.speed * Math.min(distance, this.maxAcceleration)
-        const vY = Math.sin(this.rotation) * this.speed * Math.min(distance, this.maxAcceleration)
-        this.vel.x += vX
-        this.vel.y += vY
+    if (!this.collide) {
+      if (this.target) {
+        this.vel = { x: 0, y: 0 }
+        let distance
+        let xCenter = CONSTANTS.CANVAS_WIDTH / 2
+        let yCenter = CONSTANTS.CANVAS_HEIGHT / 2
+        if (this.x < CONSTANTS.CANVAS_WIDTH / 2) xCenter = this.x
+        if (this.x > CONSTANTS.WIDTH - CONSTANTS.CANVAS_WIDTH / 2) xCenter = CONSTANTS.CANVAS_WIDTH - CONSTANTS.WIDTH + this.x
+        if (this.y < CONSTANTS.CANVAS_HEIGHT / 2) yCenter = this.y
+        if (this.y > CONSTANTS.HEIGHT - CONSTANTS.CANVAS_HEIGHT / 2) yCenter = CONSTANTS.CANVAS_HEIGHT - CONSTANTS.HEIGHT + this.y
+        this.rotation = Maths.angleBetween(xCenter, yCenter, this.target.x, this.target.y)
+        distance = Maths.distance(xCenter, yCenter, this.target.x, this.target.y)
+        if (distance > this.minMoveDistance) {
+          const vX = Math.cos(this.rotation) * this.speed * Math.min(distance, this.maxAcceleration)
+          const vY = Math.sin(this.rotation) * this.speed * Math.min(distance, this.maxAcceleration)
+          this.vel.x += vX
+          this.vel.y += vY
+        } else {
+          this.target = null
+        }
       } else {
-        this.target = null
+        this.vel.x *= CONSTANTS.AIR_RESISTENCE
+        this.vel.y *= CONSTANTS.AIR_RESISTENCE
+        if (this.isBooting) this.boost()
+        this.rotation += this.turning
+        this.rotation = this.rotation % (2 * Math.PI)
+        this.turning = 0
       }
     }
 
-    if (Maths.magnitude(this.vel.x, this.vel.y) < 1e-8 && this.score > 0) {
-      this.score--
+    if (CONSTANTS.TRAINING && Maths.magnitude(this.vel.x, this.vel.y) < 1e-8) {
       this.life--
     }
 
     if (this.score < 0) this.life--
-
-    for (let i = 0, l = planets.length, p; i < l; i++) {
-      p = planets[i]
-      this.gravitateTo(p)
-    }
-
-    if (Maths.magnitude(this.gra.x, this.gra.y) > (CONSTANTS.SHIP_SPEED * 2)) {
-      this.gra = Maths.magnitude(this.gra.x, this.gra.y, CONSTANTS.SHIP_SPEED * 2)
-    }
     
     this.oldX = this.x * 1.00
     this.oldY = this.y * 1.00
-    this.x += this.vel.x + this.gra.x
-    this.y += this.vel.y + this.gra.y
     for (let i = 0, l = planets.length, x, y, r, p, d; i < l; i++) {
       p = planets[i]
       x = p.x
       y = p.y
       r = p.radius / 2
       if (this.circleCollide(x, y, r)) {
+        // this.gravitateTo({ x, y, mass: p.mass, repulsive: true })
         if (p.owner === this.id) {
-          this.setCollide(5, 10)
+          this.setCollide(10, 10)
         } else {
-          this.setCollide(20, 20)
+          this.setCollide(10, 20)
         }
         break
       }
+      // if (!this.collide) {
+      //   this.gravitateTo(p)
+      // }
+    }
+    if (Maths.magnitude(this.gra.x, this.gra.y) > (CONSTANTS.SHIP_SPEED * 2)) {
+      this.gra = Maths.magnitude(this.gra.x, this.gra.y, CONSTANTS.SHIP_SPEED * 2)
     }
     for (let i = 0, l = ships.length, x, y, s, d; i < l; i++) {
       s = ships[i]
@@ -234,17 +260,32 @@ module.exports = class Ship extends Element {
       y = a.y
       if (this.circleCollide(x, y, CONSTANTS.ASTEROID_RADIUS)) this.setCollide(5, 20)
     }
-    if (this.worldCollide()) this.setCollide(2, 5, true)
-    if (this.collide) {
-      this.x -= this.vel.x * 2
-      this.y -= this.vel.y * 2
+    if (this.worldCollide() && CONSTANTS.TRAINING) {
+      this.setCollide(0, 5, true)
+      this.gravitateTo({ x: CONSTANTS.WIDTH / 2, y: CONSTANTS.HEIGHT / 2, mass: 100 * CONSTANTS.WIDTH })
+    }
+    if (this.collide > 0) {
+      this.x -= this.vel.x - this.gra.x
+      this.y -= this.vel.y - this.gra.y
+      // const mag = Maths.magnitude(this.vel.x, this.vel.y)
+      // let vel = Maths.rotate(0, 0, this.vel.x, this.vel.y, Math.PI)
+      // if (mag < CONSTANTS.SHIP_SPEED / 2) {
+      //   vel = Maths.magnitude(vel.x, vel.y, CONSTANTS.SHIP_SPEED / 2)
+      // }
+      // this.x += vel.x
+      // this.y += vel.y
+      // this.gravitateTo({ x, y, mass: p.mass * 2, repulse: true, force: true })
       this.rotation += 0.5 * this.collide
       this.rotation = this.rotation % (Math.PI * 2)
       this.collide--
       if (this.collide === 0) {
         this.vel.x = 0
         this.vel.y = 0
+        this.rotation = this.beforeAngle + Math.PI
       }
+    } else {
+      this.x += this.vel.x + this.gra.x
+      this.y += this.vel.y + this.gra.y
     }
     
     for (let i = 0, l = this.bullets.length, b; i < l; i++) {
@@ -263,51 +304,53 @@ module.exports = class Ship extends Element {
     if (this.life <= 0 || this.dead) {
       this.life = 0
       this.dead = true
-      // console.log('DIE', this.brain.forTraining, 'DEAD', this.dead, this.life)
+      if (CONSTANTS.TRAINING) {
+        this.reset()
+      }
     }
   }
 
   circleCollide (x, y, r) {
     const x1 = this.x-this.size/2,
-          y1 = this.y,
+          y1 = this.y-this.size/2,
           x2 = this.x + this.size/2,
-          y2 = this.y,
+          y2 = this.y-this.size/2,
           x3 = this.x,
-          y3 = this.y + this.size
+          y3 = this.y + this.size/2
 
-    return Maths.circlePointCollision(x1, y1, x, y, r) ||
-            Maths.circlePointCollision(x2, y2, x, y, r) ||
-            Maths.circlePointCollision(x3, y3, x, y, r)
+    return Maths.circlePointCollision(x1, y1, x, y, r + 5) ||
+            Maths.circlePointCollision(x2, y2, x, y, r + 5) ||
+            Maths.circlePointCollision(x3, y3, x, y, r + 5)
   }
 
   worldCollide () {
     const x1 = this.x-this.size/2,
-          y1 = this.y,
+          y1 = this.y-this.size/2,
           x2 = this.x + this.size/2,
-          y2 = this.y,
+          y2 = this.y-this.size/2,
           x3 = this.x,
-          y3 = this.y + this.size
-    if (x1 < this.xMin) return true
-    if (x1 > this.xMax) return true
-    if (y1 < this.yMin) return true
-    if (y1 > this.yMax) return true
-    if (x2 < this.xMin) return true
-    if (x2 > this.xMax) return true
-    if (y2 < this.yMin) return true
-    if (y2 > this.yMax) return true
-    if (x3 < this.xMin) return true
-    if (x3 > this.xMax) return true
-    if (y3 < this.yMin) return true
-    if (y3 > this.yMax) return true
+          y3 = this.y + this.size / 2
+    if (x1 < this.xMin + 2) return true
+    if (x1 > this.xMax - 2) return true
+    if (y1 < this.yMin + 2) return true
+    if (y1 > this.yMax - 2) return true
+    if (x2 < this.xMin + 2) return true
+    if (x2 > this.xMax - 2) return true
+    if (y2 < this.yMin + 2) return true
+    if (y2 > this.yMax - 2) return true
+    if (x3 < this.xMin + 2) return true
+    if (x3 > this.xMax - 2) return true
+    if (y3 < this.yMin + 2) return true
+    if (y3 > this.yMax - 2) return true
   }
 
   shipCollide (x, y) {
     const x1 = this.x-this.size/2,
-          y1 = this.y,
+          y1 = this.y-this.size/2,
           x2 = this.x + this.size/2,
-          y2 = this.y,
+          y2 = this.y-this.size/2,
           x3 = this.x,
-          y3 = this.y + this.size,
+          y3 = this.y + this.size / 2,
           px1 = x-this.size/2,
           py1 = y,
           px2 = x + this.size/2,

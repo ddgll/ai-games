@@ -126,7 +126,7 @@ class CoreContext {
     this.debug('Update ship! <pre>' + JSON.stringify(data, null, true) + '</pre>', true)
     switch (type) {
       case 'a': {
-        if (data.length === 12) {
+        if (data.length === 14) {
           const n = data[3]
           const x = data[4]
           const y = data[5]
@@ -136,17 +136,19 @@ class CoreContext {
           const g = data[9]
           const vx = data[10]
           const vy = data[11]
+          const tx = data[10]
+          const ty = data[11]
           if (typeof this.ships[id] === 'undefined') {
             if (!this.element) {
-              this.ships[id] = new Ship(id, n, { x, y, a, s, l, g, vx, vy }, this.renderer, this.log)
+              this.ships[id] = new Ship(id, n, { x, y, a, s, l, g, vx, vy, tx, ty }, this.renderer, this.log)
             } else {
-              this.ships[id] = new this.element(id, { x, y, a, s, l, g, vx, vy }, this.renderer, this.log)
+              this.ships[id] = new this.element(id, { x, y, a, s, l, g, vx, vy, tx, ty }, this.renderer, this.log)
             }
           }
         }
       }
       case 'm': {
-        if (data.length === 11) {
+        if (data.length === 13) {
           const x = data[3]
           const y = data[4]
           const a = data[5]
@@ -155,14 +157,16 @@ class CoreContext {
           const g = data[8]
           const vx = data[9]
           const vy = data[10]
+          const tx = data[11]
+          const ty = data[12]
           if (typeof this.ships[id] !== 'undefined') {
             // console.log('UPDATE SHIP', x, y)
-            this.ships[id].update({ x, y, a, s, l, g, vx, vy })
+            this.ships[id].update({ x, y, a, s, l, g, vx, vy, tx, ty })
           } else {
             if (!this.element) {
-              this.ships[id] = new Ship(id, 'John Doe', { x, y, a, s, l, g, vx, vy }, this.renderer, this.log)
+              this.ships[id] = new Ship(id, 'John Doe', { x, y, a, s, l, g, vx, vy, tx, ty }, this.renderer, this.log)
             } else {
-              this.ships[id] = new this.element(id, { x, y, a, s, l, g, vx, vy }, this.renderer, this.log)
+              this.ships[id] = new this.element(id, { x, y, a, s, l, g, vx, vy, tx, ty }, this.renderer, this.log)
             }
           }
         }

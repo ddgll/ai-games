@@ -119,9 +119,9 @@ module.exports = class GameContext {
       s = ships[i]
       const idx = sIds.indexOf(s.id)
       if (idx < 0) {
-        diffs.push(`s|a|${s.id}|${s.n}|${s.x}|${s.y}|${s.a}|${s.l}|${s.s}|${s.g}|${s.vx}|${s.vy}`)
+        diffs.push(`s|a|${s.id}|${s.n}|${s.x}|${s.y}|${s.a}|${s.l}|${s.s}|${s.g}|${s.vx}|${s.vy}|${s.t.x}|${s.t.y}`)
       } else {
-        diffs.push(`s|m|${s.id}|${s.x}|${s.y}|${s.a}|${s.l}|${s.s}|${s.g}|${s.vx}|${s.vy}`)
+        diffs.push(`s|m|${s.id}|${s.x}|${s.y}|${s.a}|${s.l}|${s.s}|${s.g}|${s.vx}|${s.vy}|${s.t.x}|${s.t.y}`)
       }
     }
     // for (let i = 0, l = sShips.length, sS; i < l; i++) {
@@ -169,7 +169,7 @@ module.exports = class GameContext {
       bullets = bullets.concat(s.bullets.filter(b => !b.dead()).map(b => {
         return { id: b.id, o: b.owner, x: b.x, y: b.y, vx: b.vel.x, vy: b.vel.y, a: b.rotation }
       }))
-      return { id: s.id, n: s.name, x: s.x, y: s.y, a: s.rotation, s: s.score, vx: s.vel.x, vy: s.vel.y, d: s.distance, l: s.life, g: (s.god > 0) ? 1 : 0 }
+      return { id: s.id, n: s.name, x: s.x, y: s.y, a: s.rotation, s: s.score, vx: s.vel.x, vy: s.vel.y, d: s.distance, l: s.life, g: (s.god > 0) ? 1 : 0, t: s.target || { x: 0, y: 0 } }
     })
     const planets = this.planets.map(p => {
       bullets = bullets.concat(p.bullets.filter(b => !b.dead()).map(b => {
@@ -225,6 +225,15 @@ module.exports = class GameContext {
     //this.ships = this.ships.slice(0, index)
     //this.ships.push(ship)
     //this.ships = this.ships.concat(fin)
+  }
+
+  moveKeyboardShip (id, boosting, angle, fire) {
+    const index = this.ships.findIndex(s => s.id === id)
+    if (index < 0) return null
+    const ship = this.ships[index]
+    // const fin = this.ships.slice(index + 1)
+    if (fire) ship.shoot()
+    ship.moveKeyboard(boosting, angle)
   }
 
   removeShip (id) {

@@ -75,6 +75,14 @@ const magnitude = (x, y, length) => {
   }
 }
 
+const rotate = (cx, cy, x, y, angle) => {
+  const cos = Math.cos(angle),
+      sin = Math.sin(angle),
+      nx = (cos * (x - cx)) + (sin * (y - cy)) + cx,
+      ny = (cos * (y - cy)) - (sin * (x - cx)) + cy;
+  return { x: nx, y: ny };
+}
+
 const uuid = () => {
   let d = new Date().getTime()
   let uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -98,5 +106,6 @@ module.exports = {
   map,
   norm,
   magnitude,
-  uuid
+  uuid,
+  rotate
 }

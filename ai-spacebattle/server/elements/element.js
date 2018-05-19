@@ -67,7 +67,7 @@ module.exports = class Element {
 					force = p.mass / distSQ,
 					ax = dx / dist * force,
 					ay = dy / dist * force;
-			if (dist < CONSTANTS.PLANET_MAX_RADIUS * .75) {
+			if (dist < CONSTANTS.PLANET_MAX_RADIUS * .75 || p.force) {
 				this.vel.x -= ax * Math.random();
 				this.vel.y -= ay * Math.random();
 			}
@@ -79,8 +79,14 @@ module.exports = class Element {
 					force = p.mass / distSQ,
 					ax = dx / dist * force,
 					ay = dy / dist * force;
-			this.gra.x += ax;
-			this.gra.y += ay;
+			
+			if (p.negative) {
+				this.gra.x -= ax;
+				this.gra.y -= ay;
+			} else {
+				this.gra.x += ax;
+				this.gra.y += ay;
+			}
 
 			if (Maths.magnitude(this.gra.x, this.gra.y) > (CONSTANTS.SHIP_SPEED * 2)) {
 				this.gra = Maths.magnitude(this.gra.x, this.gra.y, (CONSTANTS.SHIP_SPEED * 2))

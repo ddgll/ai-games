@@ -4,7 +4,15 @@ const CONSTANTS = require('../statics/js/constants')
 const Context = require('../statics/js/game/CoreContext')
 const Element = require('../statics/js/game/fElement')
 const Maths = require('../server/maths')
+const Target = require('./target')
 const neurojs = require('../../../neurojs-master/src/framework')
+const ACTIONS_STRING = [
+  'up',
+  'upright',
+  'upleft',
+  'upfire',
+  'fire'
+]
 
 module.exports = class Bot {
   constructor (context, brainFile = './bots/best-bot.bin') {
@@ -27,27 +35,27 @@ module.exports = class Bot {
     if (!fs.existsSync(this.sessionDir)) fs.mkdirSync(this.sessionDir)
 
     this.seight = CONSTANTS.PLANET_MAX_RADIUS
-    const states = 28
-    const actions = 2
-    const temporalWindow = 5
+    const states = 30
+    const actions = 5
+    const temporalWindow = 1
     const input = states + temporalWindow * (states + actions)
     const actor = new neurojs.Network.Model([
       { type: 'input', size: input },
-      { type: 'fc', size: Math.round(input / 2), activation: 'relu' },
-      { type: 'fc', size: Math.round(input / 2), activation: 'relu' },
-      { type: 'fc', size: Math.round(input / 2), activation: 'relu', dropout: 0.5 },
+      { type: 'fc', size: 50, activation: 'relu' },
+      { type: 'fc', size: 50, activation: 'relu' },
+      { type: 'fc', size: 50, activation: 'relu', dropout: 0.5 },
       { type: 'fc', size: actions, activation: 'tanh' },
       { type: 'regression' }
     ])
     const critic =new neurojs.Network.Model([
       { type: 'input', size: input + actions },
-      { type: 'fc', size: Math.round((input + actions) / 2), activation: 'relu' },
-      { type: 'fc', size: Math.round((input + actions) / 2), activation: 'relu' },
+      { type: 'fc', size: 100, activation: 'relu' },
+      { type: 'fc', size: 100, activation: 'relu' },
       { type: 'fc', size: 1 },
       { type: 'regression' }
     ])
     this.brain = new neurojs.Agent({
-      type: 'sarsa', // q-learning or sarsa
+      type: 'q-learning', // q-learning or sarsa
       actor: savedBrain && savedBrain.actor ? savedBrain.actor.clone() : actor,
       critic: savedBrain && savedBrain.critic ? savedBrain.critic : critic,
 
@@ -148,10 +156,39 @@ module.exports = class Bot {
     this.rotation = parseFloat(this.me.context.a)
   }
 
+  oneHotDecode (zeros){
+    const max = Math.max.apply(null, zeros)
+    const index = zeros.indexOf(max)
+    return ACTIONS_STRING[index]
+  }
+
+  get () {
+    if (!this.me || !this.me.id) return
+    const god = parseInt(this.me.g)
+    if (god) return
+    return this.action(this.label)
+  }
+  
+
+  action (label) {
+    switch (label) {
+      case 'up':
+        return [1,0,0]
+      case 'upleft':
+        return [1,-CONSTANTS.TURN_ANGLE,0]
+      case 'upright':
+        return [1,CONSTANTS.TURN_ANGLE,0]
+      case 'upfire':
+        return [1,0,1]
+      case 'fire':
+        return [0,0,1]
+    }
+    return [0,0,0]
+  }
+
   rotate(cx, cy, x, y, angle) {
-    const radians = (Math.PI / 180) * angle,
-        cos = Math.cos(angle),
-        sin = Math.sin(angle),
+    const cos = Math.cos(angle + Math.PI / 2),
+        sin = Math.sin(angle + Math.PI / 2),
         nx = (cos * (x - cx)) + (sin * (y - cy)) + cx,
         ny = (cos * (y - cy)) - (sin * (x - cx)) + cy;
     return { x: nx, y: ny };
@@ -168,9 +205,9 @@ module.exports = class Bot {
     let result = []
     const sort = (a, b) => a.d - b.d
     const reduce = (a, b) => a.concat(b)
-    const vels = Math.sqrt(2) * (CONSTANTS.SHIP_SPEED*2)
-    const vela = Math.sqrt(2) * (CONSTANTS.ASTEROID_MAX_SPEED*2)
-    const velb = Math.sqrt(2) * (CONSTANTS.BULLET_SPEED*2)
+    // const vels = Math.sqrt(2) * (CONSTANTS.SHIP_SPEED*2)
+    // const vela = Math.sqrt(2) * (CONSTANTS.ASTEROID_MAX_SPEED*2)
+    // const velb = Math.sqrt(2) * (CONSTANTS.BULLET_SPEED*2)
     let d, x, y, r, v, an, ow, sei, min = Infinity
     planets.forEach(p => {
       x = parseFloat(p.context.x) - this.x
@@ -181,7 +218,7 @@ module.exports = class Bot {
       sei = this.seight * 4
       if (d < sei) {
         v = Maths.magnitude(x, y, d - r / 2)
-        v = this.rotate(0, 0, v.x, v.y, -this.rotation)
+        v = this.rotate(0, 0, v.x, v.y, this.rotation)
         obs.planets.push({
           d: d,
           data: [
@@ -197,7 +234,7 @@ module.exports = class Bot {
       if (this.me && +s.id === +this.me.id) return
       x = parseFloat(s.context.x) - this.x
       y = parseFloat(s.context.y) - this.y
-      v = this.rotate(0, 0, x, y, -this.rotation)
+      v = this.rotate(0, 0, x, y, this.rotation)
       x = v.x
       y = v.y
       an = parseFloat(s.context.a)
@@ -215,7 +252,7 @@ module.exports = class Bot {
     asteroids.forEach(a => {
       x = parseFloat(a.context.x) - this.x
       y = parseFloat(a.context.y) - this.y
-      v = this.rotate(0, 0, x, y, -this.rotation)
+      v = this.rotate(0, 0, x, y, this.rotation)
       x = v.x
       y = v.y
       d = Maths.distance(0, 0, x, y)
@@ -231,7 +268,7 @@ module.exports = class Bot {
       x = parseFloat(b.context.x) - this.x
       y = parseFloat(b.context.y) - this.y
       d = Maths.distance(0, 0, x, y)
-      v = this.rotate(0, 0, x, y, -this.rotation)
+      v = this.rotate(0, 0, x, y, this.rotation)
       x = v.x
       y = v.y
       if (d < this.seight) obs.bonuses.push({
@@ -252,7 +289,7 @@ module.exports = class Bot {
       x = parseFloat(b.context.x) - this.x
       y = parseFloat(b.context.y) - this.y
       d = Maths.distance(0, 0, x, y)
-      v = this.rotate(0, 0, x, y, -this.rotation)
+      v = this.rotate(0, 0, x, y, this.rotation)
       x = v.x
       y = v.y
       if (d < this.seight) obs.bullets.push({
@@ -301,34 +338,23 @@ module.exports = class Bot {
     const angle = parseFloat(me.a)
     const x = parseFloat(me.x)
     const y = parseFloat(me.y)
-    const vx = parseFloat(me.vx)
-    const vy = parseFloat(me.vy)
-    // console.log(me)
-    if (!this.lastX) this.lastX = x * 1.0
-    if (!this.lastY) this.lastY = y * 1.0
-    const MAX_DIST = 60
     this.x = x * 1.00
     this.y = y * 1.00
-    const distance = Maths.distance(this.lastX, this.lastY, x, y)
+    if (!this.lastX) this.lastX = x * 1.0
+    if (!this.lastY) this.lastY = y * 1.0
     const life = parseFloat(this.life)
     const score = parseFloat(me.s)
     const god = parseInt(me.g)
-    let lifeReward = (!this.lastLife || this.lastLife === life) ? 1 : 1 - Maths.norm(this.lastLife - life, 0, 20)
+    if (god) return
+    let lifeReward = (!this.lastLife || this.lastLife === life) ? 1 : god ? 0 : 1 - Maths.norm(this.lastLife - life, 0, 10)
     if (lifeReward < 0) lifeReward = 0
     if (lifeReward > 1) lifeReward = 1
     const scoreReward = (god || score < 1 || this.lastScore > score) ? 0 : 1 - (1 / score)
-    const velReward = (god || distance < 1 || distance > MAX_DIST) ? 0 : Maths.norm(distance, 0, MAX_DIST)
-    // this.reward = Maths.norm(Maths.norm(lifeReward + scoreReward, 0, 2) + velReward, 0, 2)
-    if (this.oldMe && me.id !== this.oldMe) {
+    this.reward = Maths.norm(lifeReward + scoreReward * 2, 0, 3)
+    if ((this.oldMe && me.id !== this.oldMe) || this.lastLife < life) {
       console.log('REWARD 0 Because of death')
       this.reward = 0.00
-    } else {
-      this.reward = Math.pow(vy, 2) - 0.1 * Math.pow(vx, 2) - (this.lastScore - score) * 10 - (this.lastLife - life) * 20
-      // console.log(this.reward, life, this.lastLife)
-      // this.reward = Maths.norm(lifeReward + velReward, 0, 2) * 1.00
     }
-    // this.reward = this.distance / this.frames // Maths.norm(Maths.magnitude(this.vel.x, this.vel.y), 0, CONSTANTS.SHIP_SPEED)
-    // this.print(lifeReward, scoreReward, velReward)
 
     this.oldMe = me.id
     this.lastScore = score * 1.00
@@ -336,14 +362,10 @@ module.exports = class Bot {
     this.lastX = x * 1.0
     this.lastY = y * 1.0
 
-    // console.log('REWARDS', vx, vy, this.reward, Math.pow(vy, 2) - 0.1 * Math.pow(vx, 2), (this.lastScore - score) * 10, (this.lastLife - life) * 20)
-    const inputs = [
-      Maths.norm(vx, -CONSTANTS.SHIP_SPEED, CONSTANTS.SHIP_SPEED), // 0
-      Maths.norm(vy, -CONSTANTS.SHIP_SPEED, CONSTANTS.SHIP_SPEED) // 1
-    ].concat(obstacles)
+    // console.log('REWARDS', this.reward, lifeReward, scoreReward)
+    const inputs = obstacles
     this.loss = this.brain.learn(this.reward)
-    // console.log(obstacles, obstacles.length, this.outputs, this.reward, this.rotation)
-    this.outputs = this.brain.policy(obstacles)
+    this.outputs = this.brain.policy(inputs)
     this.outputs = this.outputs.map(o => {
       const oo = (o + 1) / 2
       if (oo < 0 || oo > 1 || isNaN(oo)) console.error('OUTPUT !!!', oo)
@@ -352,10 +374,8 @@ module.exports = class Bot {
     obstacles.forEach((ii, idx) => {
       if (ii < 0 || ii > 1 || isNaN(ii)) console.error('INPUT !!!', ii, idx, x, y, vx, vy)
     })
-    const coords = { 
-      x: Maths.lerp(this.outputs[0], 0, CONSTANTS.CANVAS_WIDTH),
-      y: Maths.lerp(this.outputs[1], 0, CONSTANTS.CANVAS_HEIGHT)
-    }
-    return coords
+    // console.log(inputs, inputs.length, this.outputs, this.reward, this.label)
+    this.label = this.oneHotDecode(this.outputs)
+    return this.label
   }
 }

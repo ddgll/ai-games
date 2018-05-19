@@ -90,7 +90,7 @@ const sketch = (socket, name) => {
         }
       }
       if (m) {
-        // console.log('MOUSE MOVE', m)
+        console.log('MOUSE MOVE', m)
         socket.emit('m', [m.x,m.y])
       }
     }

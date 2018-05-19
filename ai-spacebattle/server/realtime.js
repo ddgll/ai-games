@@ -42,9 +42,19 @@ module.exports = function (io) {
       game.moveShip(id, x, y)
     })
 
-    socket.on('mo', ({ c: [x, y], o }) => {
-      game.moveShip(id, x, y)
-      io.emit('o', { id, o })
+    socket.on('k', ([boosting, angle, fire]) => {
+      game.moveKeyboardShip(id, boosting, angle, fire)
+    })
+
+    socket.on('ko', (data) => {
+      game.moveKeyboardShip(id, data.c[0], data.c[1], data.c[2])
+      io.emit('o', { id: data.id, ship: id, o: data.o, a: data.a })
+    })
+
+    socket.on('mo', (data) => {
+      // { c: [x, y], id, o }
+      game.moveShip(id, data.c[0], data.c[1])
+      io.emit('o', { id: data.id, ship: id, o: data.o, a: data.a })
     })
 
     socket.on('d', (id) => {
@@ -53,6 +63,7 @@ module.exports = function (io) {
     })
 
     socket.on('c', ([x, y]) => {
+      console.log('SHOOT !')
       game.shoot(id, x, y)
     })
   }

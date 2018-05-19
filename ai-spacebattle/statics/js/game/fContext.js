@@ -20,23 +20,20 @@ class Context extends CoreContext {
     }
   }
 
-  setObs(id, o) {
-    if (typeof this.ships[id] === 'undefined') return
-    this.ships[id].setObs(o)
-  }
-
   draw (frameDiv, bgDiv) {
     let me = this.me
     let s
     if (me) {
       for (let id in this.ships) {
-        s = this.ships[id]
-        if (me.id === s.id) {
+        s = this.ships[+id]
+        if (+me.id === +s.id) {
           me.x = s.context.x
           me.y = s.context.y
           me.s = s.context.s
           me.l = s.context.l
           break;
+        } else {
+          console.log('ME NOT FOUND !!')
         }
       }
     }

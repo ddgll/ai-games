@@ -63,6 +63,10 @@ module.exports = class Game {
     this.context.moveShip(id, x, y, o)
   }
 
+  moveKeyboardShip (id, boosting, angle, fire) {
+    this.context.moveKeyboardShip(id, boosting, angle, fire)
+  }
+
   exists (id) {
     return this.context.exists(id)
   }
