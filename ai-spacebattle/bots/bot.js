@@ -1,11 +1,11 @@
 const fs = require('fs')
 const path = require('path')
 const CONSTANTS = require('../statics/js/constants')
+const Bounds = require('../statics/js/bounds')
 const Context = require('../statics/js/game/CoreContext')
 const Element = require('../statics/js/game/fElement')
 const Maths = require('../server/maths')
-const Target = require('./target')
-const neurojs = require('../../../neurojs-master/src/framework')
+const neurojs = require('../neurojs/framework')
 const ACTIONS_STRING = [
   'up',
   'upright',
@@ -13,6 +13,32 @@ const ACTIONS_STRING = [
   'upfire',
   'fire'
 ]
+
+const states = (CONSTANTS.VISION.TOP + CONSTANTS.VISION.BOTTOM) * (CONSTANTS.VISION.SIDE * 2)
+const actions = 5
+const temporalWindow = 3
+const input = states + temporalWindow * (states + actions)
+const brains = {
+  actor: new neurojs.Network.Model([
+    { type: 'input', size: input },
+    { type: 'fc', size: 50, activation: 'relu' },
+    { type: 'fc', size: 50, activation: 'relu' },
+    { type: 'fc', size: 50, activation: 'relu', dropout: 0.5 },
+    { type: 'fc', size: actions, activation: 'tanh' },
+    { type: 'regression' }
+
+  ]),
+  critic: new neurojs.Network.Model([
+    { type: 'input', size: input + actions },
+    { type: 'fc', size: 100, activation: 'relu' },
+    { type: 'fc', size: 100, activation: 'relu' },
+    { type: 'fc', size: 1 },
+    { type: 'regression' }
+  ])
+}
+brains.shared = new neurojs.Shared.ConfigPool()
+brains.shared.set('actor', brains.actor.newConfiguration())
+brains.shared.set('critic', brains.critic.newConfiguration())
 
 module.exports = class Bot {
   constructor (context, brainFile = './bots/best-bot.bin') {
@@ -35,31 +61,10 @@ module.exports = class Bot {
     if (!fs.existsSync(this.sessionDir)) fs.mkdirSync(this.sessionDir)
 
     this.seight = CONSTANTS.PLANET_MAX_RADIUS
-    const states = 30
-    const actions = 5
-    const temporalWindow = 1
-    const input = states + temporalWindow * (states + actions)
-    const actor = new neurojs.Network.Model([
-      { type: 'input', size: input },
-      { type: 'fc', size: 50, activation: 'relu' },
-      { type: 'fc', size: 50, activation: 'relu' },
-      { type: 'fc', size: 50, activation: 'relu', dropout: 0.5 },
-      { type: 'fc', size: actions, activation: 'tanh' },
-      { type: 'regression' }
-    ])
-    const critic =new neurojs.Network.Model([
-      { type: 'input', size: input + actions },
-      { type: 'fc', size: 100, activation: 'relu' },
-      { type: 'fc', size: 100, activation: 'relu' },
-      { type: 'fc', size: 1 },
-      { type: 'regression' }
-    ])
     this.brain = new neurojs.Agent({
       type: 'q-learning', // q-learning or sarsa
-      actor: savedBrain && savedBrain.actor ? savedBrain.actor.clone() : actor,
-      critic: savedBrain && savedBrain.critic ? savedBrain.critic : critic,
-
-      network: savedBrain && savedBrain.network ? savedBrain.network.clone() : actor,
+      actor: savedBrain && savedBrain.actor ? savedBrain.actor.clone() : null,
+      critic: savedBrain && savedBrain.critic ? savedBrain.critic : null,
 
       states: states,
       actions: actions,
@@ -71,13 +76,15 @@ module.exports = class Bot {
       discount: 0.95, 
 
       experience: 75e3, 
-      learningPerTick: 60, 
-      startLearningAt: 1000,
+      learningPerTick: 40, 
+      startLearningAt: 900,
 
       theta: 0.05, // progressive copy
 
       alpha: 0.1 // advantage learning
     })
+    brains.shared.add('actor', this.brain.algorithm.actor)
+    brains.shared.add('critic', this.brain.algorithm.critic)
     this.lastX = 0
     this.lastY = 0
 
@@ -110,6 +117,8 @@ module.exports = class Bot {
     this.y = parseFloat(this.context.ships[this.me.id].context.y)
     this.rotation = parseFloat(this.context.ships[this.me.id].context.a)
     this.life = parseFloat(this.context.ships[this.me.id].context.l)
+    this.score = parseFloat(this.context.ships[this.me.id].context.s)
+    this.god = parseFloat(this.context.ships[this.me.id].context.g)
     return true
   }
 
@@ -153,6 +162,8 @@ module.exports = class Bot {
     this.lastY = parseFloat(this.me.context.y)
     this.x = parseFloat(this.me.context.x)
     this.y = parseFloat(this.me.context.y)
+    this.score = parseFloat(this.me.context.s)
+    this.god = parseFloat(this.me.context.g)
     this.rotation = parseFloat(this.me.context.a)
   }
 
@@ -187,129 +198,96 @@ module.exports = class Bot {
   }
 
   rotate(cx, cy, x, y, angle) {
-    const cos = Math.cos(angle + Math.PI / 2),
-        sin = Math.sin(angle + Math.PI / 2),
+    // return { x: cx, y: cy }
+    const cos = Math.cos(angle),
+        sin = Math.sin(angle),
         nx = (cos * (x - cx)) + (sin * (y - cy)) + cx,
         ny = (cos * (y - cy)) - (sin * (x - cx)) + cy;
     return { x: nx, y: ny };
   }
 
-  sense (planets, ships, asteroids, bonuses, bullets) {
-    const obs = {
-      planets: [],
-      ships: [],
-      asteroids: [],
-      bullets: [],
-      bonuses: []
+  getShipCoordinates (x, y, angle) {
+    const xp = (Math.cos(angle) * (x - this.x)) + (Math.sin(angle) * (y - this.y))
+    const yp = (-Math.sin(angle) * (x - this.x)) + (Math.cos(angle) * (y - this.y))
+    return { x: xp, y: -yp }
+  }
+
+  getNormType (type) {
+    switch(type) {
+      case 'bo': return -.1
+      case 'w': return .9
+      case 'p': return .5
+      case 'b': return .2
+      case 's': return .4
+      case 'a': return .3
     }
-    let result = []
-    const sort = (a, b) => a.d - b.d
-    const reduce = (a, b) => a.concat(b)
-    // const vels = Math.sqrt(2) * (CONSTANTS.SHIP_SPEED*2)
-    // const vela = Math.sqrt(2) * (CONSTANTS.ASTEROID_MAX_SPEED*2)
-    // const velb = Math.sqrt(2) * (CONSTANTS.BULLET_SPEED*2)
-    let d, x, y, r, v, an, ow, sei, min = Infinity
+    return .1
+  }
+
+  sense (planets, ships, asteroids, bonuses, bullets) {
+    const obs = []
+    const bounds = new Bounds(CONSTANTS)
+    let x, y, r, v, ow
     planets.forEach(p => {
-      x = parseFloat(p.context.x) - this.x
-      y = parseFloat(p.context.y) - this.y
+      x = parseFloat(p.context.x)
+      y = parseFloat(p.context.y) 
       r = parseFloat(p.context.r)
-      d = Maths.distance(0, 0, x, y)
-      ow = p.o === this.id ? 1 : p.c === this.id ? p.cl / 100 : 0
-      sei = this.seight * 4
-      if (d < sei) {
-        v = Maths.magnitude(x, y, d - r / 2)
-        v = this.rotate(0, 0, v.x, v.y, this.rotation)
-        obs.planets.push({
-          d: d,
-          data: [
-          Maths.norm(v.x, -sei, sei), // 0 - 2
-          Maths.norm(v.y, -sei, sei) // 1 - 3
-        ]})
-      }
+      v = this.getShipCoordinates(x, y, this.rotation)
+      if (bounds.circleCollide(v.x, v.y, r)) obs.push({ type: 'p', p: this.getNormType('p'), x: v.x, y: v.y, r })
     })
-    obs.planets.sort(sort)
-    while (obs.planets.length < 2) obs.planets.push({ d: 0, data: [ 1, 1 ] })
-    result = result.concat(obs.planets.slice(0, 2).map(d => d.data).reduce(reduce)) // 8
     ships.forEach(s => {
       if (this.me && +s.id === +this.me.id) return
-      x = parseFloat(s.context.x) - this.x
-      y = parseFloat(s.context.y) - this.y
-      v = this.rotate(0, 0, x, y, this.rotation)
-      x = v.x
-      y = v.y
-      an = parseFloat(s.context.a)
-      d = Maths.distance(0, 0, x, y)
-      if (d < this.seight) obs.ships.push({
-        d: d,
-        data: [
-        Maths.norm(x, -this.seight, this.seight), // 4 - 6
-        Maths.norm(y, -this.seight, this.seight) // 5 - 7
-      ]})
+      x = parseFloat(s.context.x)
+      y = parseFloat(s.context.y)
+      v = this.getShipCoordinates(x, y, this.rotation)
+      if (bounds.triangleCollide(v.x, v.y, CONSTANTS.SHIP_SIZE)) obs.push({ type: 's', p: this.getNormType('s'), x: v.x, y: v.y, r: CONSTANTS.SHIP_SIZE })
     })
-    obs.ships.sort(sort)
-    while (obs.ships.length < 2) obs.ships.push({ d: 0, data: [ 1, 1 ] })
-    result = result.concat(obs.ships.slice(0, 2).map(d => d.data).reduce(reduce)) // 10
     asteroids.forEach(a => {
-      x = parseFloat(a.context.x) - this.x
-      y = parseFloat(a.context.y) - this.y
-      v = this.rotate(0, 0, x, y, this.rotation)
-      x = v.x
-      y = v.y
-      d = Maths.distance(0, 0, x, y)
-      if (d < this.seight && d < min) obs.asteroids.push({d: d, data: [
-        Maths.norm(x, -this.seight, this.seight), // 8 - 10
-        Maths.norm(y, -this.seight, this.seight) // 9 - 11
-      ]})
+      x = parseFloat(a.context.x)
+      y = parseFloat(a.context.y)
+      v = this.getShipCoordinates(x, y, this.rotation)
+      if (bounds.circleCollide(v.x, v.y, CONSTANTS.ASTEROID_RADIUS)) obs.push({ type: 'a', p: this.getNormType('a'), x: v.x, y: v.y, r: CONSTANTS.ASTEROID_RADIUS })
     })
-    obs.asteroids.sort(sort)
-    while (obs.asteroids.length < 2) obs.asteroids.push({ d: 0, data: [ 1, 1 ] })
-    result = result.concat(obs.asteroids.slice(0, 2).map(d => d.data).reduce(reduce)) // 6
     bonuses.forEach(b => {
-      x = parseFloat(b.context.x) - this.x
-      y = parseFloat(b.context.y) - this.y
-      d = Maths.distance(0, 0, x, y)
-      v = this.rotate(0, 0, x, y, this.rotation)
-      x = v.x
-      y = v.y
-      if (d < this.seight) obs.bonuses.push({
-        d: d,
-        data: [
-        Maths.norm(x, -this.seight, this.seight), // 12 - 14
-        Maths.norm(y, -this.seight, this.seight) // 13 - 15
-      ]})
+      x = parseFloat(b.context.x)
+      y = parseFloat(b.context.y)
+      v = this.getShipCoordinates(x, y, this.rotation)
+      if (bounds.circleCollide(v.x, v.y, CONSTANTS.BONUSES_RADIUS)) obs.push({ type: 'bo', p: this.getNormType('bo'), x: v.x, y: v.y, r: CONSTANTS.BONUSES_RADIUS })
     })
-    obs.bonuses.sort(sort)
-    while (obs.bonuses.length < 2) obs.bonuses.push({ d: 0, data: [ 1, 1 ] })
-    result = result.concat(obs.bonuses.slice(0, 2).map(d => d.data).reduce(reduce)) // 4
     const reg = /^s[0-9]+$/
     const regrep = /[^0-9]/g
     bullets.forEach(b => {
       // console.log('BULLET', b)
-      if (reg.test(ow) && ow.replace(regrep, '') === this.id.replace(regrep, '')) return
-      x = parseFloat(b.context.x) - this.x
-      y = parseFloat(b.context.y) - this.y
-      d = Maths.distance(0, 0, x, y)
-      v = this.rotate(0, 0, x, y, this.rotation)
-      x = v.x
-      y = v.y
-      if (d < this.seight) obs.bullets.push({
-        d: d,
-        data: [
-        Maths.norm(x, -this.seight, this.seight), // 16 - 18 - 20 - 22
-        Maths.norm(y, -this.seight, this.seight) // 17 - 19 - 21 - 23
-      ]})
+      ow = b.context.o
+      if (reg.test(ow) && +ow.replace(regrep, '') === this.me.id) return
+      x = parseFloat(b.context.x)
+      y = parseFloat(b.context.y)
+      v = this.getShipCoordinates(x, y, this.rotation)
+      if (bounds.circleCollide(v.x, v.y, CONSTANTS.BULLET_RADIUS)) obs.push({ type: 'b', p: this.getNormType('b'), x: v.x, y: v.y, r: CONSTANTS.BULLET_RADIUS })
     })
-    obs.bullets.sort(sort)
-    while (obs.bullets.length < 4) obs.bullets.push({ d: 0, data: [ 1, 1 ] })
-    result = result.concat(obs.bullets.slice(0, 4).map(d => d.data).reduce(reduce)) // 8
-    result.push(this.x < this.seight ? Maths.norm(this.x, 0, this.seight) : 1) // Mur gauche
-    result.push(CONSTANTS.WIDTH - this.x < this.seight ? Maths.norm(CONSTANTS.WIDTH - this.x, 0, this.seight) : 1) // Mur droite
-    result.push(this.y < this.seight ? Maths.norm(this.y, 0, this.seight) : 1) // Mur haut
-    result.push(CONSTANTS.HEIGHT - this.y < this.seight ? Maths.norm(CONSTANTS.HEIGHT - this.y, 0, this.seight) : 1) // Mur bas
+    // let p1, p2
+    // // Mur gauche
+    // p1 = this.getShipCoordinates(0, 0, this.rotation)
+    // p2 = this.getShipCoordinates(0, CONSTANTS.HEIGHT, this.rotation)
+    // if (bounds.lineCollide(p1.x, p1.y, p2.x, p2.y)) obs.push({ type: 'w', p: this.getNormType('w'), x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y })
+    // // Mur doites
+    // p1 = this.getShipCoordinates(CONSTANTS.WIDTH, 0, this.rotation)
+    // p2 = this.getShipCoordinates(CONSTANTS.WIDTH, CONSTANTS.HEIGHT, this.rotation)
+    // if (bounds.lineCollide(p1.x, p1.y, p2.x, p2.y)) obs.push({ type: 'w', p: this.getNormType('w'), x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y })
+    // // Mur haut
+    // p1 = this.getShipCoordinates(0, 0, this.rotation)
+    // p2 = this.getShipCoordinates(CONSTANTS.WIDTH, 0, this.rotation)
+    // if (bounds.lineCollide(p1.x, p1.y, p2.x, p2.y)) obs.push({ type: 'w', p: this.getNormType('w'), x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y })
+    // // Mur bas
+    // p1 = this.getShipCoordinates(0, CONSTANTS.HEIGHT, this.rotation)
+    // p2 = this.getShipCoordinates(CONSTANTS.WIDTH, CONSTANTS.HEIGHT, this.rotation)
+    // if (bounds.lineCollide(p1.x, p1.y, p2.x, p2.y)) obs.push({ type: 'w', p: this.getNormType('w'), x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y })
     
-    this.obstacles = result
+    const vision = bounds.getVision(obs)
 
-    return result
+    this.obstacles = { o: obs, v: vision }
+
+    return vision
   }
 
   noPoint () {
@@ -334,7 +312,7 @@ module.exports = class Bot {
     if (!me || !me.id) {
       return null
     }
-    const obstacles = this.sense(planets, ships, asteroids, bonuses, bullets)
+    const vision = this.sense(planets, ships, asteroids, bonuses, bullets)
     const angle = parseFloat(me.a)
     const x = parseFloat(me.x)
     const y = parseFloat(me.y)
@@ -343,17 +321,17 @@ module.exports = class Bot {
     if (!this.lastX) this.lastX = x * 1.0
     if (!this.lastY) this.lastY = y * 1.0
     const life = parseFloat(this.life)
-    const score = parseFloat(me.s)
-    const god = parseInt(me.g)
-    if (god) return
-    let lifeReward = (!this.lastLife || this.lastLife === life) ? 1 : god ? 0 : 1 - Maths.norm(this.lastLife - life, 0, 10)
-    if (lifeReward < 0) lifeReward = 0
-    if (lifeReward > 1) lifeReward = 1
-    const scoreReward = (god || score < 1 || this.lastScore > score) ? 0 : 1 - (1 / score)
-    this.reward = Maths.norm(lifeReward + scoreReward * 2, 0, 3)
+    const score = parseFloat(this.score)
+    const god = parseInt(this.god)
+    // if (god) return
+    let lifeReward = (!this.lastLife || this.lastLife === life) ? 1 : god ? 0 : Maths.norm(this.lastLife - life, 0, 10)
+    if (lifeReward < 0) lifeReward = 1
+    if (lifeReward > 1) lifeReward = 0
+    const scoreReward = (score < 1 || this.lastScore > score) ? 0 : (score - this.lastScore)
+    this.reward = scoreReward - lifeReward * 10 // Maths.norm(lifeReward + scoreReward * 2, 0, 3)
     if ((this.oldMe && me.id !== this.oldMe) || this.lastLife < life) {
-      console.log('REWARD 0 Because of death')
-      this.reward = 0.00
+      // console.log('REWARD 0 Because of death')
+      this.reward = -1
     }
 
     this.oldMe = me.id
@@ -363,19 +341,13 @@ module.exports = class Bot {
     this.lastY = y * 1.0
 
     // console.log('REWARDS', this.reward, lifeReward, scoreReward)
-    const inputs = obstacles
+    const inputs = vision
     this.loss = this.brain.learn(this.reward)
     this.outputs = this.brain.policy(inputs)
-    this.outputs = this.outputs.map(o => {
-      const oo = (o + 1) / 2
-      if (oo < 0 || oo > 1 || isNaN(oo)) console.error('OUTPUT !!!', oo)
-      return oo
-    })
-    obstacles.forEach((ii, idx) => {
-      if (ii < 0 || ii > 1 || isNaN(ii)) console.error('INPUT !!!', ii, idx, x, y, vx, vy)
-    })
     // console.log(inputs, inputs.length, this.outputs, this.reward, this.label)
+    console.log(this.reward, lifeReward, scoreReward, this.brain.age, this.label)
     this.label = this.oneHotDecode(this.outputs)
+    brains.shared.step()
     return this.label
   }
 }

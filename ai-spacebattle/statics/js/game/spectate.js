@@ -121,7 +121,7 @@ const sketch = (socket, scale) => {
         context.update()
         context.setBounds(xCenter, yCenter)
         p.translate(xCenter, yCenter)
-        context.draw()
+        context.draw(observators)
       }
     }
   }
@@ -134,6 +134,8 @@ const observe = (id) => {
       p.noStroke()
       const canvas = p.createCanvas(CONSTANTS.PLANET_MAX_RADIUS * 2, CONSTANTS.PLANET_MAX_RADIUS * 2)
       p.frameRate(30)
+
+
     }
 
     const lerp = (norm, min, max) => {
@@ -143,64 +145,55 @@ const observe = (id) => {
     p.draw = () => {
       p.scale(0.5)
       p.background(0)
-      if (typeof observators[id] === 'undefined') return
-      const observations = observators[id].o
+      if (typeof observators[id] === 'undefined') {
+        console.log('OBS undefined')
+        return
+      }
+      const observations = observators[id].o.o
+      const vision = observators[id].o.v
       const angle = observators[id].a 
-      if(!observations || !observations.length) return
+      if(!observations) {
+        console.log('NO OBS', observations, observators[id])
+        return
+      }
       p.push()
       p.translate(CONSTANTS.PLANET_MAX_RADIUS * 2, CONSTANTS.PLANET_MAX_RADIUS * 2)
-      p.push()
-      p.rotate(Math.PI)
       p.triangle(-CONSTANTS.SHIP_SIZE / 2, -CONSTANTS.SHIP_SIZE / 2, CONSTANTS.SHIP_SIZE / 2, -CONSTANTS.SHIP_SIZE / 2, 0, CONSTANTS.SHIP_SIZE/2)
-      p.pop()
-      for (let i = 0, l = observations.length - 1, ox, oy, mult; i < l; i += 2) {
-        mult = i < 4 ? 4 : 1
-        ox = observations[i]
-        oy = observations[i + 1]
-        p.stroke(0, 255, 255)
-        if (i < 3) { // planets
-          p.stroke(0, 255, 0)         
-        } else if (i < 7) { // ships
-          p.stroke(255, 255, 0)
-        } else if (i < 11) { // asteroids
-          p.stroke(255, 0, 255)
-        } else if (i < 15) { //bonuses
-          p.stroke(0, 255, 0)
-        } else if (i < 24) { // bullets
-          p.stroke(0, 255, 255)
-        } else { // wall
-          p.stroke(255, 255, 0)
-        }
-        if (i < 24) {
-          if (ox === 1 && oy === 1) continue
-          ox = lerp(ox, -CONSTANTS.PLANET_MAX_RADIUS * mult, CONSTANTS.PLANET_MAX_RADIUS * mult) // - p.WIDTH / 2
-          oy = lerp(oy, -CONSTANTS.PLANET_MAX_RADIUS * mult, CONSTANTS.PLANET_MAX_RADIUS * mult) // - p.HEIGHT / 2
-          p.line(0, 0, ox, oy)
-          p.ellipse(ox, oy, 10, 10)
-        } else if (i <  26) {
-          if (ox !== 1) {
-            ox = lerp(ox, 0, CONSTANTS.PLANET_MAX_RADIUS * mult) // - p.WIDTH / 2
-            p.line(0, 0, -ox, 0)
-            p.ellipse(-ox, 0, 10, 10)
-          }
-          if (oy !== 1) {
-            oy = lerp(oy, 0, CONSTANTS.PLANET_MAX_RADIUS * mult) // - p.WIDTH / 2
-            p.line(0, 0, oy, 0)
-            p.ellipse(oy, 0, 10, 10)
-          }
-        } else {
-          if (ox !== 1) {
-            ox = lerp(ox, 0, CONSTANTS.PLANET_MAX_RADIUS * mult) // - p.HEIGHT / 2
-            p.line(0, 0, 0, -ox)
-            p.ellipse(0, -ox, 10, 10)
-          }
-          if (oy !== 1) {
-            oy = lerp(oy, 0, CONSTANTS.PLANET_MAX_RADIUS * mult) // - p.HEIGHT / 2
-            p.line(0, 0, 0, oy)
-            p.ellipse(0, oy, 10, 10)
-          }
+      let x, y, index, str = ''
+      for (let i = 0, l = 2 * CONSTANTS.VISION.SIDE; i < l; i++) {
+        if (str.length) str += "\n"
+        x = -(CONSTANTS.VISION.SIDE * CONSTANTS.VISION.WIDTH) + i * CONSTANTS.VISION.WIDTH
+        for (let j = 0, ll = CONSTANTS.VISION.TOP + CONSTANTS.VISION.BOTTOM; j < ll; j++){
+          y = -(CONSTANTS.VISION.TOP * CONSTANTS.VISION.WIDTH) + j * CONSTANTS.VISION.WIDTH
+          index = i + j
+          str += vision[index] + ' '
+          g = 255 - (vision[index] * 255)
+          r = (vision[index] * 255)
+          // console.log('FILF', g, r, vision[index])
+          p.stroke(255)
+          p.fill(r, g, 0, 125)
+          p.rect(x, y, CONSTANTS.VISION.WIDTH, CONSTANTS.VISION.WIDTH)
         }
       }
+      console.log(observations)
+      p.noStroke()
+      p.fill(255)
+      observations.forEach((o) => {
+        switch(o.type) {
+          case 'bo':
+          case 'p':
+          case 'b':
+          case 'a':
+            p.ellipse(o.x, o.y, o.r, o.r)
+            break;
+          case 's':
+            p.ellipse(o.x, o.y, o.r, o.r)
+            break;
+          case 'w':
+            p.line(o.x1, o.y1, o.x2, o.y2)
+            break;
+        }
+      })
       p.pop()
     }
   }

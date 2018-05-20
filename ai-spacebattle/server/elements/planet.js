@@ -65,11 +65,12 @@ module.exports = class Planet extends Element {
     if (target !== null && this.owner !== target.id) {
       this.shoot(target)
     }
-    if (nb === 1 || (!CONSTANTS.SHIP_SEE_SHIP && nb >= 1)) {
-      if (this.challenge > 0 && this.owner === challenger.id) {
-        challenger.score++
-        this.challenge--
-      } else if (this.challenger !== challenger.id) {
+    if (nb === 1) {
+      // if (this.challenge > 0 && this.owner === challenger.id) {
+      //   challenger.score++
+      //   this.challenge--
+      // } else
+      if (this.challenger !== challenger.id) {
         this.challenger = challenger.id
         this.challenge = 0
       } else if (challenger.collide === 0 && challenger.god === 0) {
@@ -89,6 +90,6 @@ module.exports = class Planet extends Element {
     for (let i = 0, l = this.bullets.length, b; i < l; i++) {
       this.bullets[i].update(planets, ships, asteroids)
     }
-    if (this.ownership && !this.ownership.brain) this.ownership.score += .1
+    if (this.ownership && !CONSTANTS.TRAINING) this.ownership.score += .1
   }
 }

@@ -218,7 +218,7 @@ module.exports = class Ship extends Element {
       }
     }
 
-    if (CONSTANTS.TRAINING && Maths.magnitude(this.vel.x, this.vel.y) < 1e-8) {
+    if (CONSTANTS.TRAINING && Maths.magnitude(this.vel.x, this.vel.y) < 1e-2) {
       this.life--
     }
 
@@ -261,8 +261,8 @@ module.exports = class Ship extends Element {
       if (this.circleCollide(x, y, CONSTANTS.ASTEROID_RADIUS)) this.setCollide(5, 20)
     }
     if (this.worldCollide() && CONSTANTS.TRAINING) {
-      this.setCollide(0, 5, true)
-      this.gravitateTo({ x: CONSTANTS.WIDTH / 2, y: CONSTANTS.HEIGHT / 2, mass: 100 * CONSTANTS.WIDTH })
+      this.setCollide(10, 5, true)
+      // this.gravitateTo({ x: CONSTANTS.WIDTH / 2, y: CONSTANTS.HEIGHT / 2, mass: 100 * CONSTANTS.WIDTH })
     }
     if (this.collide > 0) {
       this.x -= this.vel.x - this.gra.x
@@ -275,8 +275,8 @@ module.exports = class Ship extends Element {
       // this.x += vel.x
       // this.y += vel.y
       // this.gravitateTo({ x, y, mass: p.mass * 2, repulse: true, force: true })
-      this.rotation += 0.5 * this.collide
-      this.rotation = this.rotation % (Math.PI * 2)
+      // this.rotation += 0.5 * this.collide
+      // this.rotation = this.rotation % (Math.PI * 2)
       this.collide--
       if (this.collide === 0) {
         this.vel.x = 0

@@ -6,7 +6,7 @@ class Ship extends Element {
     this.debug('Create ship ' + id)
   }
 
-  draw (player) {
+  draw (player, observations) {
     const id = this.id
     if (!this.context) return
     const x = parseFloat(this.context.x)
@@ -42,10 +42,31 @@ class Ship extends Element {
       r.text(name, x - length, y + CONSTANTS.SHIP_SIZE + 20)
       r.pop()
       r.translate(x, y)
-      
       r.rotate(a)
+
+      const bounds = new Bounds(CONSTANTS)
+      r.stroke(255)
+      r.strokeWeight(1)
+      r.line(bounds.bounds.x1.x, bounds.bounds.x1.y, bounds.bounds.x2.x, bounds.bounds.x2.y)
+      r.line(bounds.bounds.x2.x, bounds.bounds.x2.y, bounds.bounds.x3.x, bounds.bounds.x3.y)
+      r.line(bounds.bounds.x3.x, bounds.bounds.x3.y, bounds.bounds.x4.x, bounds.bounds.x4.y)
+      r.line(bounds.bounds.x4.x, bounds.bounds.x4.y, bounds.bounds.x1.x, bounds.bounds.x1.y)
+      const vision = observations && observations.o ? observations.o.v : []
+      // console.log(vision)
+      for (let i = 0, xr, yr, g, re, index, l = 2 * CONSTANTS.VISION.SIDE; i < l; i++) {
+        xr = -(CONSTANTS.VISION.SIDE * CONSTANTS.VISION.WIDTH) + i * CONSTANTS.VISION.WIDTH
+        for (let j = 0, ll = CONSTANTS.VISION.TOP + CONSTANTS.VISION.BOTTOM; j < ll; j++){
+          yr = -(CONSTANTS.VISION.TOP * CONSTANTS.VISION.WIDTH) + j * CONSTANTS.VISION.WIDTH
+          index = i + j
+          g = 255 - (vision[index] * 255)
+          re = (vision[index] * 255)
+          // console.log('FILF', g, re, vision[index])
+          r.stroke(255)
+          r.fill(re, g, 0, 125)
+          r.rect(xr, yr, CONSTANTS.VISION.WIDTH, CONSTANTS.VISION.WIDTH)
+        }
+      }
       r.triangle(-CONSTANTS.SHIP_SIZE/2, -CONSTANTS.SHIP_SIZE/2, CONSTANTS.SHIP_SIZE/2, -CONSTANTS.SHIP_SIZE/2, 0, CONSTANTS.SHIP_SIZE/2)
-      
       r.pop()
       if ((tx || ty) && CONSTANTS.CANVAS_WIDTH_ORIG && CONSTANTS.CANVAS_HEIGHT_ORIG) {
         r.push()

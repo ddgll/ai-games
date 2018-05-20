@@ -20,7 +20,7 @@ class Context extends CoreContext {
     }
   }
 
-  draw (frameDiv, bgDiv) {
+  draw (observators) {
     let me = this.me
     let s
     if (me) {
@@ -35,12 +35,6 @@ class Context extends CoreContext {
         } else {
           console.log('ME NOT FOUND !!')
         }
-      }
-    }
-    if (frameDiv) {
-      frameDiv.innerHTML = `<h1>Frame: ${this.last}, id: ${this.id}, buffer: ${this.buffer.length}</h1>`
-      if (me) {
-        frameDiv.innerHTML += `<h2>(${me.x}, ${me.y})</h2>`
       }
     }
     this.renderer.push()
@@ -84,7 +78,7 @@ class Context extends CoreContext {
     }
     for (let id in this.ships) {
       s = this.ships[id]
-      if (this.onScreen(s.context.x, s.context.y)) s.draw(me)
+      if (this.onScreen(s.context.x, s.context.y)) s.draw(me, observators[id])
     }
     for (let i = 0, l = this.explosions.length, s; i < l; i++) {
       this.explosions[i].draw()

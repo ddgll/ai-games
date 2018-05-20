@@ -37,6 +37,7 @@ socket.on('connect', () => {
       enterGame()
     }
   })
+  let nc = 0
 
   setInterval(() => {
     if (bot) {
@@ -44,8 +45,9 @@ socket.on('connect', () => {
         enterGame()
       } else if (bot.me) {
         // console.log(coords)
-        const action = bot.get()
+        let action = bot.get()
         if (debug) {
+          if (nc > 5) action = [0,0,0]
           socket.emit('ko', { c: action, id: id, o: bot.obstacles, a: bot && bot.me ? bot.me.context.a : 0 })
         } else {
           // console.log('COords', target)
@@ -57,11 +59,11 @@ socket.on('connect', () => {
         // socket.emit('m', [target.x, target.y])
       }
     }
-  }, CONSTANTS.TIME / 10)
+  }, CONSTANTS.SEND_TIME)
 
-  let nc = 0
   setInterval(() => {
     if (!bot || !bot.me || !bot.me.id) return
+    nc++
     // const bonuses = Object.values(bot.context.bonuses)
     const bonuses = []
     const d = new Date()
@@ -76,5 +78,3 @@ socket.on('connect', () => {
 
   if (!bot) enterGame()
 })
-
-
