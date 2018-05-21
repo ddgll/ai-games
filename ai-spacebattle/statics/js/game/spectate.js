@@ -73,7 +73,7 @@ const sketch = (socket, scale) => {
         if (!context) return
         context.fromRemote(ctx)
       })
-      socket.on('o', function ({ id, ship, o, a }) {
+      socket.on('o', function ({ id, ship, o, a, t }) {
         if (!context) return
         if (!observators[id]) {
           logsDiv.innerHTML += `<div id="obs-${id}"></div>`
@@ -81,7 +81,7 @@ const sketch = (socket, scale) => {
             new p5(observe(id), `obs-${id}`)
           }, 1000)
         }
-        observators[id] = { o, a }
+        observators[id] = { o, a, t }
       })
 
       const setFirst = (ctx) => {
@@ -151,7 +151,8 @@ const observe = (id) => {
       }
       const observations = observators[id].o.o
       const vision = observators[id].o.v
-      const angle = observators[id].a 
+      const angle = observators[id].a
+      const target = observators[id].t
       if(!observations) {
         console.log('NO OBS', observations, observators[id])
         return
@@ -195,7 +196,16 @@ const observe = (id) => {
             break;
         }
       })
+
       p.pop()
+
+      if (target) {
+        p.push()
+        p.translate(target.x, target.y)
+        p.fill(255, 255, 0)
+        p.ellipse(0, 0, 10, 10)
+        p.pop()
+      }
     }
   }
 }

@@ -3,6 +3,7 @@ class Ship extends Element {
     super(id, context, renderer, log)
 
     this.name = name
+    this.target = null
     this.debug('Create ship ' + id)
   }
 
@@ -110,9 +111,12 @@ class Ship extends Element {
       r.fill(255)
       r.triangle(-CONSTANTS.SHIP_SIZE/2, -CONSTANTS.SHIP_SIZE/2, CONSTANTS.SHIP_SIZE/2, -CONSTANTS.SHIP_SIZE/2, 0, CONSTANTS.SHIP_SIZE/2)
       r.pop()
-      if ((tx || ty) && CONSTANTS.CANVAS_WIDTH_ORIG && CONSTANTS.CANVAS_HEIGHT_ORIG) {
+
+      const target = observations && observations.t ? observations.t : null
+      if (target) this.target = target
+      if (this.target && CONSTANTS.CANVAS_WIDTH_ORIG && CONSTANTS.CANVAS_HEIGHT_ORIG) {
         r.push()
-        r.translate(tx, ty)
+        r.translate(this.target.x, this.target.y)
         r.fill(0, 255, 0)
         r.ellipse(0, 0, 10, 10)
         r.pop()

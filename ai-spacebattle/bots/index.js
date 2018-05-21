@@ -5,7 +5,7 @@ const CONSTANTS = require('../statics/js/constants')
 const Bot = require('./bot')
 
 const debug = true
-let bot, target = { x: CONSTANTS.CANVAS_WIDTH / 2, y: CONSTANTS.CANVAS_HEIGHT / 2 }, mouse = { x: CONSTANTS.CANVAS_WIDTH / 2, y: CONSTANTS.CANVAS_HEIGHT / 2 }, counter = 0
+let bot, counter = 0
 
 const socket = io.connect('http://localhost:7770')
 // const socket = io.connect('http://space-battle.io')
@@ -44,14 +44,14 @@ socket.on('connect', () => {
       if (!bot.update()) {
         enterGame()
       } else if (bot.me) {
-        // console.log(coords)
         let action = bot.get()
+        if (!action) return
         if (debug) {
           // if (nc > 5) action = [0,0,0]
-          socket.emit('ko', { c: action, id: id, o: bot.obstacles, a: bot ? bot.rotation : 0 })
+          socket.emit('mo', { c: action, id: id, o: bot.obstacles, t: { x: bot.target.x, y: bot.target.y }, a: bot ? bot.rotation : 0 })
         } else {
           // console.log('COords', target)
-          socket.emit('k', action)
+          socket.emit('m', action)
         }
         // velocity.x
         // target.y += velocity.y
@@ -73,7 +73,6 @@ socket.on('connect', () => {
     const fin = f.getTime()
     if (fin - start > CONSTANTS.TIME) console.log('TIME TO Think too large !!', fin - start, 'ms', bot.brain.age)
     if (bot.brain.age % 100 === 0) console.log('TIME TO Think', fin - start, 'ms', bot.brain.age)
-    if (target.fire) socket.emit('c', target.c)
   }, CONSTANTS.TIME)
 
   if (!bot) enterGame()

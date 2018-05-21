@@ -48,13 +48,13 @@ module.exports = function (io) {
 
     socket.on('ko', (data) => {
       game.moveKeyboardShip(id, data.c[0], data.c[1], data.c[2])
-      io.emit('o', { id, o: data.o, a: data.a })
+      io.emit('o', { id, o: data.o, t: data.t, a: data.a })
     })
 
     socket.on('mo', (data) => {
       // { c: [x, y], id, o }
       game.moveShip(id, data.c[0], data.c[1])
-      io.emit('o', { id, o: data.o, a: data.a })
+      io.emit('o', { id, o: data.o, t: data.t, a: data.a })
     })
 
     socket.on('d', (id) => {
