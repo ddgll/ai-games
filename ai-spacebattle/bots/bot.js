@@ -16,7 +16,7 @@ const ACTIONS_STRING = [
 
 const states = (CONSTANTS.VISION.TOP + CONSTANTS.VISION.BOTTOM) * (CONSTANTS.VISION.SIDE * 2)
 const actions = 5
-const temporalWindow = 3
+const temporalWindow = 1
 const input = states + temporalWindow * (states + actions)
 const brains = {
   actor: new neurojs.Network.Model([
@@ -209,7 +209,7 @@ module.exports = class Bot {
   getShipCoordinates (x, y, angle) {
     const xp = (Math.cos(angle) * (x - this.x)) + (Math.sin(angle) * (y - this.y))
     const yp = (-Math.sin(angle) * (x - this.x)) + (Math.cos(angle) * (y - this.y))
-    return { x: xp, y: -yp }
+    return { x: xp, y: yp }
   }
 
   getNormType (type) {
@@ -246,13 +246,13 @@ module.exports = class Bot {
       x = parseFloat(a.context.x)
       y = parseFloat(a.context.y)
       v = this.getShipCoordinates(x, y, this.rotation)
-      if (bounds.circleCollide(v.x, v.y, CONSTANTS.ASTEROID_RADIUS)) obs.push({ type: 'a', p: this.getNormType('a'), x: v.x, y: v.y, r: CONSTANTS.ASTEROID_RADIUS })
+      if (bounds.circleCollide(v.x, v.y, CONSTANTS.ASTEROID_RADIUS, true)) obs.push({ type: 'a', p: this.getNormType('a'), x: v.x, y: v.y, r: CONSTANTS.ASTEROID_RADIUS })
     })
     bonuses.forEach(b => {
       x = parseFloat(b.context.x)
       y = parseFloat(b.context.y)
       v = this.getShipCoordinates(x, y, this.rotation)
-      if (bounds.circleCollide(v.x, v.y, CONSTANTS.BONUSES_RADIUS)) obs.push({ type: 'bo', p: this.getNormType('bo'), x: v.x, y: v.y, r: CONSTANTS.BONUSES_RADIUS })
+      if (bounds.circleCollide(v.x, v.y, CONSTANTS.BONUSES_RADIUS, true)) obs.push({ type: 'bo', p: this.getNormType('bo'), x: v.x, y: v.y, r: CONSTANTS.BONUSES_RADIUS })
     })
     const reg = /^s[0-9]+$/
     const regrep = /[^0-9]/g
@@ -263,25 +263,25 @@ module.exports = class Bot {
       x = parseFloat(b.context.x)
       y = parseFloat(b.context.y)
       v = this.getShipCoordinates(x, y, this.rotation)
-      if (bounds.circleCollide(v.x, v.y, CONSTANTS.BULLET_RADIUS)) obs.push({ type: 'b', p: this.getNormType('b'), x: v.x, y: v.y, r: CONSTANTS.BULLET_RADIUS })
+      if (bounds.circleCollide(v.x, v.y, CONSTANTS.BULLET_RADIUS, true)) obs.push({ type: 'b', p: this.getNormType('b'), x: v.x, y: v.y, r: CONSTANTS.BULLET_RADIUS })
     })
-    // let p1, p2
-    // // Mur gauche
-    // p1 = this.getShipCoordinates(0, 0, this.rotation)
-    // p2 = this.getShipCoordinates(0, CONSTANTS.HEIGHT, this.rotation)
-    // if (bounds.lineCollide(p1.x, p1.y, p2.x, p2.y)) obs.push({ type: 'w', p: this.getNormType('w'), x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y })
-    // // Mur doites
-    // p1 = this.getShipCoordinates(CONSTANTS.WIDTH, 0, this.rotation)
-    // p2 = this.getShipCoordinates(CONSTANTS.WIDTH, CONSTANTS.HEIGHT, this.rotation)
-    // if (bounds.lineCollide(p1.x, p1.y, p2.x, p2.y)) obs.push({ type: 'w', p: this.getNormType('w'), x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y })
-    // // Mur haut
-    // p1 = this.getShipCoordinates(0, 0, this.rotation)
-    // p2 = this.getShipCoordinates(CONSTANTS.WIDTH, 0, this.rotation)
-    // if (bounds.lineCollide(p1.x, p1.y, p2.x, p2.y)) obs.push({ type: 'w', p: this.getNormType('w'), x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y })
-    // // Mur bas
-    // p1 = this.getShipCoordinates(0, CONSTANTS.HEIGHT, this.rotation)
-    // p2 = this.getShipCoordinates(CONSTANTS.WIDTH, CONSTANTS.HEIGHT, this.rotation)
-    // if (bounds.lineCollide(p1.x, p1.y, p2.x, p2.y)) obs.push({ type: 'w', p: this.getNormType('w'), x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y })
+    let p1, p2
+    // Mur gauche
+    p1 = this.getShipCoordinates(0, 0, this.rotation)
+    p2 = this.getShipCoordinates(0, CONSTANTS.HEIGHT, this.rotation)
+    if (bounds.lineCollide(p1.x, p1.y, p2.x, p2.y)) obs.push({ type: 'w', p: this.getNormType('w'), x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y })
+    // Mur doites
+    p1 = this.getShipCoordinates(CONSTANTS.WIDTH, 0, this.rotation)
+    p2 = this.getShipCoordinates(CONSTANTS.WIDTH, CONSTANTS.HEIGHT, this.rotation)
+    if (bounds.lineCollide(p1.x, p1.y, p2.x, p2.y)) obs.push({ type: 'w', p: this.getNormType('w'), x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y })
+    // Mur haut
+    p1 = this.getShipCoordinates(0, 0, this.rotation)
+    p2 = this.getShipCoordinates(CONSTANTS.WIDTH, 0, this.rotation)
+    if (bounds.lineCollide(p1.x, p1.y, p2.x, p2.y)) obs.push({ type: 'w', p: this.getNormType('w'), x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y })
+    // Mur bas
+    p1 = this.getShipCoordinates(0, CONSTANTS.HEIGHT, this.rotation)
+    p2 = this.getShipCoordinates(CONSTANTS.WIDTH, CONSTANTS.HEIGHT, this.rotation)
+    if (bounds.lineCollide(p1.x, p1.y, p2.x, p2.y)) obs.push({ type: 'w', p: this.getNormType('w'), x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y })
     
     const vision = bounds.getVision(obs)
 
@@ -312,7 +312,8 @@ module.exports = class Bot {
     if (!me || !me.id) {
       return null
     }
-    const vision = this.sense(planets, ships, asteroids, bonuses, bullets)
+    const squares = this.sense(planets, ships, asteroids, bonuses, bullets)
+    const vision = squares.reduce((a, b) => a.concat(b))
     const angle = parseFloat(me.a)
     const x = parseFloat(me.x)
     const y = parseFloat(me.y)

@@ -157,25 +157,26 @@ const observe = (id) => {
         return
       }
       p.push()
+      // p.rotate(angle + Math.PI / 2)
+      // p.translate(-150, -100)
       p.translate(CONSTANTS.PLANET_MAX_RADIUS * 2, CONSTANTS.PLANET_MAX_RADIUS * 2)
+      p.push()
       p.triangle(-CONSTANTS.SHIP_SIZE / 2, -CONSTANTS.SHIP_SIZE / 2, CONSTANTS.SHIP_SIZE / 2, -CONSTANTS.SHIP_SIZE / 2, 0, CONSTANTS.SHIP_SIZE/2)
-      let x, y, index, str = ''
+      p.pop()
+      let x, y, red, green, index
       for (let i = 0, l = 2 * CONSTANTS.VISION.SIDE; i < l; i++) {
-        if (str.length) str += "\n"
         x = -(CONSTANTS.VISION.SIDE * CONSTANTS.VISION.WIDTH) + i * CONSTANTS.VISION.WIDTH
         for (let j = 0, ll = CONSTANTS.VISION.TOP + CONSTANTS.VISION.BOTTOM; j < ll; j++){
           y = -(CONSTANTS.VISION.TOP * CONSTANTS.VISION.WIDTH) + j * CONSTANTS.VISION.WIDTH
-          index = i + j
-          str += vision[index] + ' '
-          g = 255 - (vision[index] * 255)
-          r = (vision[index] * 255)
-          // console.log('FILF', g, r, vision[index])
+          red = (vision[i][j] * 255)
+          green = 255 - red
+          // console.log('FILF', green, red, vision[index])
           p.stroke(255)
-          p.fill(r, g, 0, 125)
+          p.fill(red, green, 0, 125)
           p.rect(x, y, CONSTANTS.VISION.WIDTH, CONSTANTS.VISION.WIDTH)
         }
       }
-      console.log(observations)
+      // console.log(observations)
       p.noStroke()
       p.fill(255)
       observations.forEach((o) => {

@@ -47,8 +47,8 @@ socket.on('connect', () => {
         // console.log(coords)
         let action = bot.get()
         if (debug) {
-          if (nc > 5) action = [0,0,0]
-          socket.emit('ko', { c: action, id: id, o: bot.obstacles, a: bot && bot.me ? bot.me.context.a : 0 })
+          // if (nc > 5) action = [0,0,0]
+          socket.emit('ko', { c: action, id: id, o: bot.obstacles, a: bot ? bot.rotation : 0 })
         } else {
           // console.log('COords', target)
           socket.emit('k', action)

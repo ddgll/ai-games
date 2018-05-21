@@ -32,7 +32,7 @@ class Rect {
     return false
   }
 
-  circleCollide (cx, cy, diameter) {
+  circleCollide (cx, cy, diameter, short) {
     const rx = this.x,
           ry = this.y,
           rw = this.w, 
@@ -56,9 +56,9 @@ class Rect {
     // // get distance from closest edges
     const distance = this.dist(cx,cy,testX,testY)
     // if the distance is less than the radius, collision!
-    if (distance <= diameter) {
-      return true
-    }
+    if (short && distance <= diameter) return true
+    if (!short && distance <= (diameter / 2)) return true
+    
     return false
   }
 
@@ -180,34 +180,37 @@ class Bounds extends Rect {
   }
 
   getVision (objects) {
-    let x, y, rect, index, vision = []
+    let x, y, rect, index, short, vision = []
     for (let i = 0, l = 2 * this.constants.VISION.SIDE; i < l; i++) {
-      x = this.x + i * this.constants.VISION.WIDTH
+      x = -(this.constants.VISION.SIDE * this.constants.VISION.WIDTH) + i * this.constants.VISION.WIDTH
+      if (typeof vision[i]) vision.push([])
       for (let j = 0, ll = this.constants.VISION.TOP + this.constants.VISION.BOTTOM; j < ll; j++){
-        y = this.y + j * this.constants.VISION.WIDTH
+        y = -(this.constants.VISION.TOP * this.constants.VISION.WIDTH) + j * this.constants.VISION.WIDTH
         rect = new Rect(x, y, this.constants.VISION.WIDTH, this.constants.VISION.WIDTH)
-        index = vision.length
-        vision.push(.1)
+        vision[i].push(.1)
+        short = true
         objects.forEach((o) => {
           switch(o.type) {
-            case 'bo':
             case 'p':
+              short = false
             case 'b':
+            case 'bo':
             case 'a':
-              if (rect.circleCollide(o.x, o.y, o.r)) vision[index] += o.p
+              if (rect.circleCollide(o.x, o.y, o.r, short)) vision[i][j] += o.p
               break;
             case 's':
-              if (rect.triangleCollide(o.x, o.y, o.r)) vision[index] += o.p
+              if (rect.triangleCollide(o.x, o.y, o.r)) vision[i][j] += o.p
               break;
             case 'w':
-              if (rect.lineCollide(o.x1, o.y1, o.x2, o.y2)) vision[index] += o.p
+              if (rect.lineCollide(o.x1, o.y1, o.x2, o.y2)) vision[i][j] += o.p
               break;
           }
         })
-        if (vision[index] > 1) vision[index] = 1
-        if (vision[index] < 0) vision[index] = 0
+        if (vision[i][j] > 1) vision[i][j] = 1
+        if (vision[i][j] < 0) vision[i][j] = 0
       }
     }
+    // console.log(vision)
     return vision
   }
 }
