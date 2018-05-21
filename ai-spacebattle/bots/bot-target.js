@@ -6,6 +6,7 @@ const Context = require('../statics/js/game/CoreContext')
 const Element = require('../statics/js/game/fElement')
 const Maths = require('../server/maths')
 const neurojs = require('../neurojs/framework')
+const Target = require('./target')
 const ACTIONS_STRING = [
   'up',
   'upright',
@@ -15,7 +16,7 @@ const ACTIONS_STRING = [
 ]
 
 const states = (CONSTANTS.VISION.TOP + CONSTANTS.VISION.BOTTOM) * (CONSTANTS.VISION.SIDE * 2)
-const actions = 5
+const actions = 3
 const temporalWindow = 1
 const input = states + temporalWindow * (states + actions)
 const brains = {
@@ -62,7 +63,7 @@ module.exports = class Bot {
 
     this.seight = CONSTANTS.PLANET_MAX_RADIUS
     this.brain = new neurojs.Agent({
-      type: 'sarsa', // q-learning or sarsa
+      type: 'q-learning', // q-learning or sarsa
       actor: savedBrain && savedBrain.actor ? savedBrain.actor.clone() : null,
       critic: savedBrain && savedBrain.critic ? savedBrain.critic : null,
 
@@ -87,6 +88,8 @@ module.exports = class Bot {
     brains.shared.add('critic', this.brain.algorithm.critic)
     this.lastX = 0
     this.lastY = 0
+
+    this.target = null
 
     this.setFirstContext(context)
 
@@ -119,6 +122,7 @@ module.exports = class Bot {
     this.life = parseFloat(this.context.ships[this.me.id].context.l)
     this.score = parseFloat(this.context.ships[this.me.id].context.s)
     this.god = parseFloat(this.context.ships[this.me.id].context.g)
+    this.target.setShipPosition(this.x, this.y, this.rotation)
     return true
   }
 
@@ -165,6 +169,11 @@ module.exports = class Bot {
     this.score = parseFloat(this.me.context.s)
     this.god = parseFloat(this.me.context.g)
     this.rotation = parseFloat(this.me.context.a)
+    if (this.target) {
+      this.target.setShipPosition(this.x, this.y, this.rotation)
+    } else {
+      this.target = new Target(this.x, this.y, this.rotation)
+    }
   }
 
   oneHotDecode (zeros){
@@ -176,8 +185,8 @@ module.exports = class Bot {
   get () {
     if (!this.me || !this.me.id) return
     const god = parseInt(this.me.g)
-    if (god) return
-    return this.action(this.label)
+    if (god) return [0,0]
+    return this.target.action()
   }
   
 
@@ -346,8 +355,8 @@ module.exports = class Bot {
     this.loss = this.brain.learn(this.reward)
     this.outputs = this.brain.policy(inputs)
     // console.log(inputs, inputs.length, this.outputs, this.reward, this.label)
-    console.log(this.reward, lifeReward, scoreReward, this.brain.age, this.label)
-    this.label = this.oneHotDecode(this.outputs)
+    this.target.setAction(this.outputs)
+    // console.log(this.reward, lifeReward, scoreReward, this.brain.age, this.target.vel)
     brains.shared.step()
     return this.label
   }

@@ -262,7 +262,7 @@ module.exports = class Ship extends Element {
     }
     if (this.worldCollide() && CONSTANTS.TRAINING) {
       this.setCollide(10, 5, true)
-      // this.gravitateTo({ x: CONSTANTS.WIDTH / 2, y: CONSTANTS.HEIGHT / 2, mass: 100 * CONSTANTS.WIDTH })
+      this.gravitateTo({ x: CONSTANTS.WIDTH / 2, y: CONSTANTS.HEIGHT / 2, mass: 100 * CONSTANTS.WIDTH })
     }
     if (this.collide > 0) {
       this.x -= this.vel.x - this.gra.x
@@ -330,18 +330,18 @@ module.exports = class Ship extends Element {
           y2 = this.y-this.size/2,
           x3 = this.x,
           y3 = this.y + this.size / 2
-    if (x1 < this.xMin + 2) return true
-    if (x1 > this.xMax - 2) return true
-    if (y1 < this.yMin + 2) return true
-    if (y1 > this.yMax - 2) return true
-    if (x2 < this.xMin + 2) return true
-    if (x2 > this.xMax - 2) return true
-    if (y2 < this.yMin + 2) return true
-    if (y2 > this.yMax - 2) return true
-    if (x3 < this.xMin + 2) return true
-    if (x3 > this.xMax - 2) return true
-    if (y3 < this.yMin + 2) return true
-    if (y3 > this.yMax - 2) return true
+    if (x1 < this.xMin + 5) return true
+    if (x1 > this.xMax - 5) return true
+    if (y1 < this.yMin + 5) return true
+    if (y1 > this.yMax - 5) return true
+    if (x2 < this.xMin + 5) return true
+    if (x2 > this.xMax - 5) return true
+    if (y2 < this.yMin + 5) return true
+    if (y2 > this.yMax - 5) return true
+    if (x3 < this.xMin + 5) return true
+    if (x3 > this.xMax - 5) return true
+    if (y3 < this.yMin + 5) return true
+    if (y3 > this.yMax - 5) return true
   }
 
   shipCollide (x, y) {

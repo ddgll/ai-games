@@ -2,7 +2,7 @@ const io = require('socket.io-client')
 const nameGenerator = require('../server/generator')
 const Maths = require('../server/maths')
 const CONSTANTS = require('../statics/js/constants')
-const Bot = require('./bot-rl')
+const Bot = require('./bot')
 
 const debug = true
 let bot, counter = 0
@@ -44,14 +44,14 @@ socket.on('connect', () => {
       if (!bot.update()) {
         enterGame()
       } else if (bot.me) {
-        // console.log(coords)
         let action = bot.get()
+        if (!action) return
         if (debug) {
           // if (nc > 5) action = [0,0,0]
-          socket.emit('ko', { c: action, id: id, o: bot.obstacles, a: bot ? bot.rotation : 0 })
+          socket.emit('mo', { c: action, id: id, o: bot.obstacles, t: { x: bot.target.x, y: bot.target.y }, a: bot ? bot.rotation : 0 })
         } else {
           // console.log('COords', target)
-          socket.emit('k', action)
+          socket.emit('m', action)
         }
         // velocity.x
         // target.y += velocity.y
@@ -72,7 +72,7 @@ socket.on('connect', () => {
     const f = new Date()
     const fin = f.getTime()
     if (fin - start > CONSTANTS.TIME) console.log('TIME TO Think too large !!', fin - start, 'ms', bot.brain.age)
-    if (nc % 10 === 0) console.log('TIME TO Think', fin - start, 'ms', bot.brain.age)
+    if (bot.brain.age % 100 === 0) console.log('TIME TO Think', fin - start, 'ms', bot.brain.age)
   }, CONSTANTS.TIME)
 
   if (!bot) enterGame()

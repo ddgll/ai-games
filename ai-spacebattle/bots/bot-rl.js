@@ -6,6 +6,7 @@ const Context = require('../statics/js/game/CoreContext')
 const Element = require('../statics/js/game/fElement')
 const Maths = require('../server/maths')
 const neurojs = require('../neurojs/framework')
+
 const ACTIONS_STRING = [
   'up',
   'upright',
@@ -36,9 +37,9 @@ const brains = {
     { type: 'regression' }
   ])
 }
-brains.shared = new neurojs.Shared.ConfigPool()
-brains.shared.set('actor', brains.actor.newConfiguration())
-brains.shared.set('critic', brains.critic.newConfiguration())
+// brains.shared = new neurojs.Shared.ConfigPool()
+// brains.shared.set('actor', brains.actor.newConfiguration())
+// brains.shared.set('critic', brains.critic.newConfiguration())
 
 module.exports = class Bot {
   constructor (context, brainFile = './bots/best-bot.bin') {
@@ -62,14 +63,14 @@ module.exports = class Bot {
 
     this.seight = CONSTANTS.PLANET_MAX_RADIUS
     this.brain = new neurojs.Agent({
-      type: 'sarsa', // q-learning or sarsa
-      actor: savedBrain && savedBrain.actor ? savedBrain.actor.clone() : null,
+      type: 'q-learning', // q-learning or sarsa
+      network: savedBrain && savedBrain.actor ? savedBrain.actor.clone() : brains.actor,
       critic: savedBrain && savedBrain.critic ? savedBrain.critic : null,
 
       states: states,
       actions: actions,
 
-      algorithm: 'ddpg', // ddpg or dqn
+      algorithm: 'dqn', // ddpg or dqn
 
       temporalWindow: temporalWindow, 
 
@@ -83,8 +84,30 @@ module.exports = class Bot {
 
       alpha: 0.1 // advantage learning
     })
-    brains.shared.add('actor', this.brain.algorithm.actor)
-    brains.shared.add('critic', this.brain.algorithm.critic)
+    // brains.shared.add('actor', this.brain.algorithm.actor)
+    // brains.shared.add('critic', this.brain.algorithm.critic)
+    // const env = {
+    //   getNumStates: function () { 
+    //     console.log('NB States', states)
+    //     return states
+    //   },
+    //   getMaxNumActions: function () {
+    //     console.log('NB Actions', actions)
+    //     return actions
+    //   }
+    // }
+    // var spec = {}
+    // spec.update = 'qlearn'; // qlearn | sarsa
+    // spec.gamma = 0.9; // discount factor, [0, 1)
+    // spec.epsilon = 0.2; // initial epsilon for epsilon-greedy policy, [0, 1)
+    // spec.alpha = 0.005; // value function learning rate
+    // spec.experience_add_every = 5; // number of time steps before we add another experience to replay memory
+    // spec.experience_size = 10000; // size of experience
+    // spec.learning_steps_per_iteration = 5;
+    // spec.tderror_clamp = 1.0; // for robustness
+    // spec.num_hidden_units = 100 // number of neurons in hidden layer
+
+    // this.brain = new DQNAgent(env, spec)
     this.lastX = 0
     this.lastY = 0
 
@@ -168,9 +191,9 @@ module.exports = class Bot {
   }
 
   oneHotDecode (zeros){
-    const max = Math.max.apply(null, zeros)
-    const index = zeros.indexOf(max)
-    return ACTIONS_STRING[index]
+    // const max = Math.max.apply(null, zeros)
+    // const index = zeros.indexOf(max)
+    return ACTIONS_STRING[zeros]
   }
 
   get () {
@@ -346,9 +369,9 @@ module.exports = class Bot {
     this.loss = this.brain.learn(this.reward)
     this.outputs = this.brain.policy(inputs)
     // console.log(inputs, inputs.length, this.outputs, this.reward, this.label)
-    console.log(this.reward, lifeReward, scoreReward, this.brain.age, this.label)
+    // console.log(this.reward, lifeReward, scoreReward, this.outputs)
     this.label = this.oneHotDecode(this.outputs)
-    brains.shared.step()
+    // brains.shared.step()
     return this.label
   }
 }
