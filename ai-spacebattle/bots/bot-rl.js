@@ -17,7 +17,7 @@ const ACTIONS_STRING = [
 
 const states = (CONSTANTS.VISION.TOP + CONSTANTS.VISION.BOTTOM) * (CONSTANTS.VISION.SIDE * 2)
 const actions = 5
-const temporalWindow = 1
+const temporalWindow = 3
 const input = states + temporalWindow * (states + actions)
 const brains = {
   actor: new neurojs.Network.Model([
@@ -63,7 +63,7 @@ module.exports = class Bot {
 
     this.seight = CONSTANTS.PLANET_MAX_RADIUS
     this.brain = new neurojs.Agent({
-      type: 'q-learning', // q-learning or sarsa
+      type: 'sarsa', // q-learning or sarsa
       network: savedBrain && savedBrain.actor ? savedBrain.actor.clone() : brains.actor,
       critic: savedBrain && savedBrain.critic ? savedBrain.critic : null,
 
@@ -74,15 +74,15 @@ module.exports = class Bot {
 
       temporalWindow: temporalWindow, 
 
-      discount: 0.95, 
+      // discount: 0.95, 
 
-      experience: 75e3, 
-      learningPerTick: 40, 
-      startLearningAt: 900,
+      // experience: 75e3, 
+      // learningPerTick: 40, 
+      // startLearningAt: 900,
 
-      theta: 0.05, // progressive copy
+      // theta: 0.05, // progressive copy
 
-      alpha: 0.1 // advantage learning
+      // alpha: 0.1 // advantage learning
     })
     // brains.shared.add('actor', this.brain.algorithm.actor)
     // brains.shared.add('critic', this.brain.algorithm.critic)
@@ -366,7 +366,7 @@ module.exports = class Bot {
 
     // console.log('REWARDS', this.reward, lifeReward, scoreReward)
     const inputs = vision
-    this.loss = this.brain.learn(this.reward)
+    this.loss = this.brain.learn(lifeReward) //this.reward)
     this.outputs = this.brain.policy(inputs)
     // console.log(inputs, inputs.length, this.outputs, this.reward, this.label)
     // console.log(this.reward, lifeReward, scoreReward, this.outputs)

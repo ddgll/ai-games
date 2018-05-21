@@ -158,12 +158,9 @@ const observe = (id) => {
         return
       }
       p.push()
-      // p.rotate(angle + Math.PI / 2)
-      // p.translate(-150, -100)
       p.translate(CONSTANTS.PLANET_MAX_RADIUS * 2, CONSTANTS.PLANET_MAX_RADIUS * 2)
-      p.push()
+      p.rotate(angle)
       p.triangle(-CONSTANTS.SHIP_SIZE / 2, -CONSTANTS.SHIP_SIZE / 2, CONSTANTS.SHIP_SIZE / 2, -CONSTANTS.SHIP_SIZE / 2, 0, CONSTANTS.SHIP_SIZE/2)
-      p.pop()
       let x, y, red, green, index
       for (let i = 0, l = 2 * CONSTANTS.VISION.SIDE; i < l; i++) {
         x = -(CONSTANTS.VISION.SIDE * CONSTANTS.VISION.WIDTH) + i * CONSTANTS.VISION.WIDTH
@@ -186,7 +183,7 @@ const observe = (id) => {
           case 'p':
           case 'b':
           case 'a':
-            p.ellipse(o.x, o.y, o.r, o.r)
+            p.ellipse(o.x, o.y, o.r, o.r || 15)
             break;
           case 's':
             p.ellipse(o.x, o.y, o.r, o.r)
@@ -196,7 +193,6 @@ const observe = (id) => {
             break;
         }
       })
-
       p.pop()
 
       if (target) {
