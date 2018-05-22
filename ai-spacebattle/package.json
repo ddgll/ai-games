@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon index.js --watch index.js --watch server --watch statics/js/constants.js",
-    "bot": "nodemon bots/index.js --watch bots --watch statics/js/constants.js --watch statics/js/bounds.js --watch statics/js/game/CoreContext.js --watch statics/js/game/fElement.js"
+    "bot": "nodemon bots/index.js --watch bots --watch server --watch statics/js/constants.js --watch statics/js/bounds.js --watch statics/js/game/CoreContext.js --watch statics/js/game/fElement.js",
+    "bot-target": "nodemon bots/index-target.js --watch bots --watch server --watch statics/js/constants.js --watch statics/js/bounds.js --watch statics/js/game/CoreContext.js --watch statics/js/game/fElement.js"
   },
   "author": "grilldotcom@gmail.com",
   "license": "ISC",

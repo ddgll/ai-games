@@ -62,7 +62,7 @@ module.exports = class Bot {
 
     this.seight = CONSTANTS.PLANET_MAX_RADIUS
     this.brain = new neurojs.Agent({
-      type: 'sarsa', // q-learning or sarsa
+      type: 'q-learning', // q-learning or sarsa
       actor: savedBrain && savedBrain.actor ? savedBrain.actor.clone() : null,
       critic: savedBrain && savedBrain.critic ? savedBrain.critic : null,
 
@@ -312,7 +312,11 @@ module.exports = class Bot {
     if (!me || !me.id) {
       return null
     }
+    const d = new Date().getTime()
     const squares = this.sense(planets, ships, asteroids, bonuses, bullets)
+    const f = new Date().getTime()
+    console.log('TIME To sense', f - d, 'ms')
+    // const squares = this.sense(planets, ships, asteroids, bonuses, bullets)
     const vision = squares.reduce((a, b) => a.concat(b))
     const angle = parseFloat(me.a)
     const x = parseFloat(me.x)

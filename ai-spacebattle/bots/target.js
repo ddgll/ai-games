@@ -22,17 +22,18 @@ module.exports = class Target {
 
   setShipPosition (x, y, r, speed = 150) {
     let distance
-    const xCenter = CONSTANTS.CANVAS_WIDTH / 2
-    const yCenter = CONSTANTS.CANVAS_HEIGHT / 2
-    if (x < CONSTANTS.CANVAS_WIDTH / 2) this.xCenter = x
-    if (x > CONSTANTS.WIDTH - CONSTANTS.CANVAS_WIDTH / 2) this.xCenter = CONSTANTS.CANVAS_WIDTH - CONSTANTS.WIDTH + x
-    if (y < CONSTANTS.CANVAS_HEIGHT / 2) this.yCenter = y
-    if (y > CONSTANTS.HEIGHT - CONSTANTS.CANVAS_HEIGHT / 2) this.yCenter = CONSTANTS.CANVAS_HEIGHT - CONSTANTS.HEIGHT + y
+    let xCenter = x - CONSTANTS.CANVAS_WIDTH / 2
+    let yCenter = y - CONSTANTS.CANVAS_HEIGHT / 2
+    if (x < CONSTANTS.CANVAS_WIDTH / 2) xCenter = x
+    if (x > CONSTANTS.WIDTH - CONSTANTS.CANVAS_WIDTH / 2) xCenter = CONSTANTS.CANVAS_WIDTH - CONSTANTS.WIDTH + x
+    if (y < CONSTANTS.CANVAS_HEIGHT / 2) yCenter = y
+    if (y > CONSTANTS.HEIGHT - CONSTANTS.CANVAS_HEIGHT / 2) yCenter = CONSTANTS.CANVAS_HEIGHT - CONSTANTS.HEIGHT + y
     this.xCenter = xCenter
     this.yCenter = yCenter
-    const length = Maths.magnitude(this.xCenter, this.yCenter)
+    // const length = Maths.magnitude(this.xCenter, this.yCenter)
     const vX = Math.cos(r) * 150
     const vY = Math.sin(r) * 150
+    // console.log('V', vX, vY)
     this.x = this.xCenter + vX
     this.y = this.yCenter + vY
     this.rotation = r
@@ -40,7 +41,7 @@ module.exports = class Target {
   }
 
   boost (force) {
-    this.force = CONSTANTS.BOOST_FORCE * force
+    this.force = CONSTANTS.TARGET_BOOST_FORCE * force
   }
   
   break () {
@@ -49,7 +50,7 @@ module.exports = class Target {
   }
   
   turn (angle) {
-    this.rotation = CONSTANTS.TURN_ANGLE * angle
+    this.rotation = CONSTANTS.TARGET_TURN_ANGLE * angle
   }
 
   setAction ([ force, rotation, shoot ]) {

@@ -2,7 +2,7 @@ const io = require('socket.io-client')
 const nameGenerator = require('../server/generator')
 const Maths = require('../server/maths')
 const CONSTANTS = require('../statics/js/constants')
-const Bot = require('./bot')
+const Bot = require('./bot-target')
 
 const debug = true
 let bot, counter = 0

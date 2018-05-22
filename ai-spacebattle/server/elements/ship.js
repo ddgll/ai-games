@@ -167,14 +167,39 @@ module.exports = class Ship extends Element {
     return { x: nx, y: ny };
   }
 
-  setCollide (collide, life, noGod) {
+  setCollide (x, y, collide, life, noGod, wall = false) {
     if (this.dead) return
     if (this.collide === 0) {
-      this.beforeAngle = this.rotation * 1.00
+      if (this.collide > 5) {
+        this.beforeAngle = this.rotation * 1.00
+      } else {
+        this.beforeAngle = -this.rotation * 1.00
+      }
       if (this.god === 0) {
         this.life -= life * CONSTANTS.DIFFICULTY
         if (!noGod) this.god = 50
       }
+      this.gra.x = 0
+      this.gra.y = 0
+      this.vel.x = 0
+      this.vel.y = 0
+      let dx = x - this.x,
+          dy = y - this.y
+      if (wall) {
+        dx = x - CONSTANTS.WIDTH / 2
+        dy = y - CONSTANTS.HEIGHT / 2
+      }
+			let distSQ = dx * dx + dy * dy,
+          dist = Math.sqrt(distSQ),
+          ax = (dx) / dist * 6,
+          ay = (dy) / dist * 6
+      // if (Maths.magnitude(ax, ay) < CONSTANTS.SHIP_SPEED) {
+      //   let v = Maths.magnitude(ax, ay, CONSTANTS.SHIP_SPEED)
+      //   ax = v.x
+      //   ay = v.y
+      // }
+      this.vel.x -= ax;
+      this.vel.y -= ay;
     }
     this.collide = collide
   }
@@ -234,15 +259,14 @@ module.exports = class Ship extends Element {
       if (this.circleCollide(x, y, r)) {
         // this.gravitateTo({ x, y, mass: p.mass, repulsive: true })
         if (p.owner === this.id) {
-          this.setCollide(10, 10)
+          this.setCollide(x, y, 10, 10, false)
         } else {
-          this.setCollide(10, 20)
+          this.setCollide(x, y, 10, 20, false)
         }
         break
+      } else if (!this.collide) {
+        this.gravitateTo(p)
       }
-      // if (!this.collide) {
-      //   this.gravitateTo(p)
-      // }
     }
     if (Maths.magnitude(this.gra.x, this.gra.y) > (CONSTANTS.SHIP_SPEED * 2)) {
       this.gra = Maths.magnitude(this.gra.x, this.gra.y, CONSTANTS.SHIP_SPEED * 2)
@@ -252,49 +276,42 @@ module.exports = class Ship extends Element {
       if (s.id === this.id) continue
       x = s.x
       y = s.y
-      if (this.shipCollide(x, y)) this.setCollide(5, 5)
+      if (this.shipCollide(x, y)) this.setCollide(x, y, 5, 5)
     }
     for (let i = 0, l = asteroids.length, x, y, a, d; i < l; i++) {
       a = asteroids[i]
       x = a.x
       y = a.y
-      if (this.circleCollide(x, y, CONSTANTS.ASTEROID_RADIUS)) this.setCollide(5, 20)
+      if (this.circleCollide(x, y, CONSTANTS.ASTEROID_RADIUS)) this.setCollide(x, y, 5, 20)
     }
-    if (this.worldCollide() && CONSTANTS.TRAINING) {
-      this.setCollide(10, 5, true)
+    const collide = this.worldCollide()
+    if (collide && CONSTANTS.TRAINING) {
+      // this.setCollide(collide.x, collide.y, 10, 5, true, true)
+      this.life -= 5
     }
     if (this.collide > 0) {
-      this.x -= this.vel.x - this.gra.x
-      this.y -= this.vel.y - this.gra.y
-      // const mag = Maths.magnitude(this.vel.x, this.vel.y)
-      // let vel = Maths.rotate(0, 0, this.vel.x, this.vel.y, Math.PI)
-      // if (mag < CONSTANTS.SHIP_SPEED / 2) {
-      //   vel = Maths.magnitude(vel.x, vel.y, CONSTANTS.SHIP_SPEED / 2)
-      // }
-      // this.x += vel.x
-      // this.y += vel.y
-      // this.gravitateTo({ x, y, mass: p.mass * 2, repulse: true, force: true })
-      // this.rotation += 0.5 * this.collide
-      // this.rotation = this.rotation % (Math.PI * 2)
+      if (this.collide > 5) {
+        this.rotation += 0.5
+        this.rotation = this.rotation % (Math.PI * 2)
+      }
       this.collide--
       if (this.collide === 0) {
         this.vel.x = 0
         this.vel.y = 0
         this.rotation = this.beforeAngle + Math.PI
       }
-    } else {
-      this.x += this.vel.x + this.gra.x
-      this.y += this.vel.y + this.gra.y
     }
+    this.x += this.vel.x + this.gra.x
+    this.y += this.vel.y + this.gra.y
     
     for (let i = 0, l = this.bullets.length, b; i < l; i++) {
       this.bullets[i].update(planets, ships, asteroids)
     }
     if (this.btimer > 0) this.btimer--
-    if (this.x > this.xMax) this.x = this.xMax
-    if (this.x < this.xMin) this.x = this.xMin
-    if (this.y > this.yMax) this.y = this.yMax
-    if (this.y < this.yMin) this.y = this.yMin
+    if (this.x > this.xMax + 5) this.x = this.xMax - 5
+    if (this.x < this.xMin - 5) this.x = this.xMin + 5
+    if (this.y > this.yMax + 5) this.y = this.yMax - 5
+    if (this.y < this.yMin - 5) this.y = this.yMin + 5
     if (!this.dead && this.life > 0) {
       const dist = Maths.distance(this.x, this.y, this.oldX, this.oldY)
       this.distance += dist / 100
@@ -329,18 +346,19 @@ module.exports = class Ship extends Element {
           y2 = this.y-this.size/2,
           x3 = this.x,
           y3 = this.y + this.size / 2
-    if (x1 < this.xMin) return true
-    if (x1 > this.xMax) return true
-    if (y1 < this.yMin) return true
-    if (y1 > this.yMax) return true
-    if (x2 < this.xMin) return true
-    if (x2 > this.xMax) return true
-    if (y2 < this.yMin) return true
-    if (y2 > this.yMax) return true
-    if (x3 < this.xMin) return true
-    if (x3 > this.xMax) return true
-    if (y3 < this.yMin) return true
-    if (y3 > this.yMax) return true
+    if (x1 < this.xMin) return { x: this.xMin, y: this.y }
+    if (x1 > this.xMax) return { x: this.xMax, y: this.y }
+    if (y1 < this.yMin) return { x: this.x, y: this.yMin }
+    if (y1 > this.yMax) return { x: this.x, y: this.yMax }
+    if (x2 < this.xMin) return { x: this.xMin, y: this.y }
+    if (x2 > this.xMax) return { x: this.xMax, y: this.y }
+    if (y2 < this.yMin) return { x: this.x, y: this.yMin }
+    if (y2 > this.yMax) return { x: this.x, y: this.yMax }
+    if (x3 < this.xMin) return { x: this.xMin, y: this.y }
+    if (x3 > this.xMax) return { x: this.xMax, y: this.y }
+    if (y3 < this.yMin) return { x: this.x, y: this.yMin }
+    if (y3 > this.yMax) return { x: this.x, y: this.yMax }
+    return null
   }
 
   shipCollide (x, y) {

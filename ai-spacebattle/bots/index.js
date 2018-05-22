@@ -72,8 +72,13 @@ socket.on('connect', () => {
     const f = new Date()
     const fin = f.getTime()
     if (fin - start > CONSTANTS.TIME) console.log('TIME TO Think too large !!', fin - start, 'ms', bot.brain.age)
-    if (nc % 10 === 0) console.log('TIME TO Think', fin - start, 'ms', bot.brain.age)
+    if (nc % 10 === 0) console.log('TIME TO Think', fin - start, 'ms', bot.brain.age, bot.label)
   }, CONSTANTS.TIME)
 
-  if (!bot) enterGame()
+  if (!bot) {
+    setTimeout(() => {
+      console.log('START Bot')
+      enterGame()
+    }, 1000)
+  }
 })

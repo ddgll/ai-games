@@ -154,7 +154,7 @@ const observe = (id) => {
       const angle = observators[id].a
       const target = observators[id].t
       if(!observations) {
-        console.log('NO OBS', observations, observators[id])
+        // console.log('NO OBS', observations, observators[id])
         return
       }
       p.push()

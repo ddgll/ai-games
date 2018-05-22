@@ -16,15 +16,16 @@ const ACTIONS_STRING = [
 ]
 
 const states = (CONSTANTS.VISION.TOP + CONSTANTS.VISION.BOTTOM) * (CONSTANTS.VISION.SIDE * 2)
+console.log('STATES', states)
 const actions = 5
-const temporalWindow = 3
+const temporalWindow = 1
 const input = states + temporalWindow * (states + actions)
 const brains = {
   actor: new neurojs.Network.Model([
     { type: 'input', size: input },
-    { type: 'fc', size: 50, activation: 'relu' },
-    { type: 'fc', size: 50, activation: 'relu' },
-    { type: 'fc', size: 50, activation: 'relu', dropout: 0.5 },
+    // { type: 'fc', size: input * 2, activation: 'relu' },
+    // { type: 'fc', size: input * 2, activation: 'relu' },
+    { type: 'fc', size: input * 2, activation: 'relu', dropout: 0.5 },
     { type: 'fc', size: actions, activation: 'tanh' },
     { type: 'regression' }
 
@@ -37,9 +38,6 @@ const brains = {
     { type: 'regression' }
   ])
 }
-// brains.shared = new neurojs.Shared.ConfigPool()
-// brains.shared.set('actor', brains.actor.newConfiguration())
-// brains.shared.set('critic', brains.critic.newConfiguration())
 
 module.exports = class Bot {
   constructor (context, brainFile = './bots/best-bot.bin') {
@@ -65,7 +63,6 @@ module.exports = class Bot {
     this.brain = new neurojs.Agent({
       type: 'sarsa', // q-learning or sarsa
       network: savedBrain && savedBrain.actor ? savedBrain.actor.clone() : brains.actor,
-      critic: savedBrain && savedBrain.critic ? savedBrain.critic : null,
 
       states: states,
       actions: actions,
@@ -73,41 +70,8 @@ module.exports = class Bot {
       algorithm: 'dqn', // ddpg or dqn
 
       temporalWindow: temporalWindow, 
-
-      // discount: 0.95, 
-
-      // experience: 75e3, 
-      // learningPerTick: 40, 
-      // startLearningAt: 900,
-
-      // theta: 0.05, // progressive copy
-
-      // alpha: 0.1 // advantage learning
     })
-    // brains.shared.add('actor', this.brain.algorithm.actor)
-    // brains.shared.add('critic', this.brain.algorithm.critic)
-    // const env = {
-    //   getNumStates: function () { 
-    //     console.log('NB States', states)
-    //     return states
-    //   },
-    //   getMaxNumActions: function () {
-    //     console.log('NB Actions', actions)
-    //     return actions
-    //   }
-    // }
-    // var spec = {}
-    // spec.update = 'qlearn'; // qlearn | sarsa
-    // spec.gamma = 0.9; // discount factor, [0, 1)
-    // spec.epsilon = 0.2; // initial epsilon for epsilon-greedy policy, [0, 1)
-    // spec.alpha = 0.005; // value function learning rate
-    // spec.experience_add_every = 5; // number of time steps before we add another experience to replay memory
-    // spec.experience_size = 10000; // size of experience
-    // spec.learning_steps_per_iteration = 5;
-    // spec.tderror_clamp = 1.0; // for robustness
-    // spec.num_hidden_units = 100 // number of neurons in hidden layer
 
-    // this.brain = new DQNAgent(env, spec)
     this.lastX = 0
     this.lastY = 0
 
@@ -368,9 +332,16 @@ module.exports = class Bot {
     const inputs = vision
     this.loss = this.brain.learn(lifeReward) //this.reward)
     this.outputs = this.brain.policy(inputs)
+    this.label = this.oneHotDecode(this.outputs)
+
+    if (this.outputs < 0 || this.outputs > 4 || isNaN(this.outputs)) console.error('OUTPUT !!!', this.outputs)
+
+    inputs.forEach((ii, idx) => {
+      if (ii < 0 || ii > 1 || isNaN(ii)) console.error('INPUT !!!', ii, idx, x, y, vx, vy)
+    })
+
     // console.log(inputs, inputs.length, this.outputs, this.reward, this.label)
     // console.log(this.reward, lifeReward, scoreReward, this.outputs)
-    this.label = this.oneHotDecode(this.outputs)
     // brains.shared.step()
     return this.label
   }

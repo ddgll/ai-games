@@ -15,7 +15,7 @@ const ACTIONS_STRING = [
   'fire'
 ]
 
-const states = (CONSTANTS.VISION.TOP + CONSTANTS.VISION.BOTTOM) * (CONSTANTS.VISION.SIDE * 2)
+const states = (CONSTANTS.VISION.TOP + CONSTANTS.VISION.BOTTOM) * (CONSTANTS.VISION.SIDE * 2) + 2
 const actions = 3
 const temporalWindow = 1
 const input = states + temporalWindow * (states + actions)
@@ -63,7 +63,7 @@ module.exports = class Bot {
 
     this.seight = CONSTANTS.PLANET_MAX_RADIUS
     this.brain = new neurojs.Agent({
-      type: 'q-learning', // q-learning or sarsa
+      type: 'sarsa', // q-learning or sarsa
       actor: savedBrain && savedBrain.actor ? savedBrain.actor.clone() : null,
       critic: savedBrain && savedBrain.critic ? savedBrain.critic : null,
 
@@ -321,7 +321,10 @@ module.exports = class Bot {
     if (!me || !me.id) {
       return null
     }
+    const d = new Date().getTime()
     const squares = this.sense(planets, ships, asteroids, bonuses, bullets)
+    const f = new Date().getTime()
+    console.log('TIME To sense', f - d, 'ms')
     const vision = squares.reduce((a, b) => a.concat(b))
     const angle = parseFloat(me.a)
     const x = parseFloat(me.x)
@@ -352,8 +355,11 @@ module.exports = class Bot {
 
     // console.log('REWARDS', this.reward, lifeReward, scoreReward)
     const inputs = vision
+    inputs.push(Maths.norm(this.x, -CONSTANTS.CANVAS_WIDTH / 2, CONSTANTS.CANVAS_WIDTH / 2))
+    inputs.push(Maths.norm(this.y, -CONSTANTS.CANVAS_HEIGHT / 2, CONSTANTS.CANVAS_HEIGHT / 2))
     this.loss = this.brain.learn(this.reward)
-    this.outputs = this.brain.policy(inputs)
+    this.outputs = [0,0,0]
+    // this.outputs = this.brain.policy(inputs)
     // console.log(inputs, inputs.length, this.outputs, this.reward, this.label)
     this.target.setAction(this.outputs)
     // console.log(this.reward, lifeReward, scoreReward, this.brain.age, this.target.vel)

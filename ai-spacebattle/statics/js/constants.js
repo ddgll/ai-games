@@ -22,10 +22,10 @@ const CONSTANTS = {
   SEND_TIME: 40,
 
   VISION: {
-    WIDTH: 10,
-    TOP: 16,
-    BOTTOM: 16,
-    SIDE: 12
+    WIDTH: 20,
+    TOP: 8,
+    BOTTOM: 8,
+    SIDE: 6
   },
 
   ASTEROID_FIXED: false,
@@ -51,10 +51,12 @@ const CONSTANTS = {
   BONUSES_RADIUS: 3,
   DIFFICULTY: 1,
   SHIP_SEE_SHIP: true,
-  TURN_ANGLE: 0.25,
+  TURN_ANGLE: 0.05,
+  BOOST_FORCE: 0.2,
+  BREAK_RESISTENCE: 0.15,
   TARGET_FRONT: 150,
-  BOOST_FORCE: 0.35,
-  BREAK_RESISTENCE: 0.15
+  TARGET_TURN_ANGLE: 0.02,
+  TARGET_BOOST_FORCE: 0.50
 }
 
 if (typeof module !== 'undefined') module.exports = CONSTANTS
