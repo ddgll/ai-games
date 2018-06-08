@@ -2,13 +2,13 @@ const io = require('socket.io-client')
 const nameGenerator = require('../server/generator')
 const Maths = require('../server/maths')
 const CONSTANTS = require('../statics/js/constants')
-const Bot = require('./bot-rl')
+const Bot = require('./bot-keyboard')
 
 const debug = true
 let bot, counter = 0
 
-const socket = io.connect('http://localhost:7770')
-// const socket = io.connect('http://space-battle.io')
+// const socket = io.connect('http://localhost:7770')
+const socket = io.connect('http://space-battle.io')
 socket.on('connect', () => {
   const id = Maths.uuid()
 
@@ -62,6 +62,7 @@ socket.on('connect', () => {
   }, CONSTANTS.SEND_TIME)
 
   setInterval(() => {
+    console.clear()
     if (!bot || !bot.me || !bot.me.id) return
     nc++
     // const bonuses = Object.values(bot.context.bonuses)
@@ -71,8 +72,8 @@ socket.on('connect', () => {
     bot.think()
     const f = new Date()
     const fin = f.getTime()
-    if (fin - start > CONSTANTS.TIME) console.log('TIME TO Think too large !!', fin - start, 'ms', bot.brain.age)
-    if (nc % 10 === 0) console.log('TIME TO Think', fin - start, 'ms', bot.brain.age, bot.label)
+    if (fin - start > CONSTANTS.TIME) console.log('TIME TO Think too large !!', fin - start, 'ms', nc)
+    console.log('TIME TO Think', fin - start, 'ms', nc, bot.label)
   }, CONSTANTS.TIME)
 
   if (!bot) {

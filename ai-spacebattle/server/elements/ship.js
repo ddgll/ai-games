@@ -243,11 +243,11 @@ module.exports = class Ship extends Element {
       }
     }
 
-    if (CONSTANTS.TRAINING && Maths.magnitude(this.vel.x, this.vel.y) < 1e-2) {
-      this.life--
-    }
+    // if (CONSTANTS.TRAINING && Maths.magnitude(this.vel.x, this.vel.y) < 1e-2) {
+    //   this.life--
+    // }
 
-    if (this.score < 0) this.life--
+    // if (this.score < 0) this.life--
     
     this.oldX = this.x * 1.00
     this.oldY = this.y * 1.00
@@ -286,7 +286,7 @@ module.exports = class Ship extends Element {
     }
     const collide = this.worldCollide()
     if (collide && CONSTANTS.TRAINING) {
-      // this.setCollide(collide.x, collide.y, 10, 5, true, true)
+      this.setCollide(collide.x, collide.y, 10, 5, true, true)
       this.life -= 5
     }
     if (this.collide > 0) {

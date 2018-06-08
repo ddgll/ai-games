@@ -321,10 +321,7 @@ module.exports = class Bot {
     if (!me || !me.id) {
       return null
     }
-    const d = new Date().getTime()
     const squares = this.sense(planets, ships, asteroids, bonuses, bullets)
-    const f = new Date().getTime()
-    console.log('TIME To sense', f - d, 'ms')
     const vision = squares.reduce((a, b) => a.concat(b))
     const angle = parseFloat(me.a)
     const x = parseFloat(me.x)
@@ -359,7 +356,7 @@ module.exports = class Bot {
     inputs.push(Maths.norm(this.y, -CONSTANTS.CANVAS_HEIGHT / 2, CONSTANTS.CANVAS_HEIGHT / 2))
     this.loss = this.brain.learn(this.reward)
     this.outputs = [0,0,0]
-    // this.outputs = this.brain.policy(inputs)
+    this.outputs = this.brain.policy(inputs)
     // console.log(inputs, inputs.length, this.outputs, this.reward, this.label)
     this.target.setAction(this.outputs)
     // console.log(this.reward, lifeReward, scoreReward, this.brain.age, this.target.vel)

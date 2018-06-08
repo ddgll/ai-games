@@ -149,59 +149,179 @@ const observe = (id) => {
         console.log('OBS undefined')
         return
       }
-      const observations = observators[id].o.o
-      const vision = observators[id].o.v
-      const angle = observators[id].a
-      const target = observators[id].t
-      if(!observations) {
-        // console.log('NO OBS', observations, observators[id])
-        return
-      }
-      p.push()
-      p.translate(CONSTANTS.PLANET_MAX_RADIUS * 2, CONSTANTS.PLANET_MAX_RADIUS * 2)
-      p.rotate(angle)
-      p.triangle(-CONSTANTS.SHIP_SIZE / 2, -CONSTANTS.SHIP_SIZE / 2, CONSTANTS.SHIP_SIZE / 2, -CONSTANTS.SHIP_SIZE / 2, 0, CONSTANTS.SHIP_SIZE/2)
-      let x, y, red, green, index
-      for (let i = 0, l = 2 * CONSTANTS.VISION.SIDE; i < l; i++) {
-        x = -(CONSTANTS.VISION.SIDE * CONSTANTS.VISION.WIDTH) + i * CONSTANTS.VISION.WIDTH
-        for (let j = 0, ll = CONSTANTS.VISION.TOP + CONSTANTS.VISION.BOTTOM; j < ll; j++){
-          y = -(CONSTANTS.VISION.TOP * CONSTANTS.VISION.WIDTH) + j * CONSTANTS.VISION.WIDTH
-          red = (vision[i][j] * 255)
-          green = 255 - red
-          // console.log('FILF', green, red, vision[index])
-          p.stroke(255)
-          p.fill(red, green, 0, 125)
-          p.rect(x, y, CONSTANTS.VISION.WIDTH, CONSTANTS.VISION.WIDTH)
-        }
-      }
-      // console.log(observations)
-      p.noStroke()
-      p.fill(255)
-      observations.forEach((o) => {
-        switch(o.type) {
-          case 'bo':
-          case 'p':
-          case 'b':
-          case 'a':
-            p.ellipse(o.x, o.y, o.r, o.r || 15)
-            break;
-          case 's':
-            p.ellipse(o.x, o.y, o.r, o.r)
-            break;
-          case 'w':
-            p.line(o.x1, o.y1, o.x2, o.y2)
-            break;
-        }
-      })
-      p.pop()
 
-      if (target) {
+      if (observators[id] && observators[id].o && observators[id].o.o) {
+        const observations = observators[id].o.o
+        const vision = observators[id].o.v
+        const angle = observators[id].a
+        const target = observators[id].t
+        if(!observations) {
+          // console.log('NO OBS', observations, observators[id])
+          return
+        }
         p.push()
-        p.translate(target.x, target.y)
-        p.fill(255, 255, 0)
-        p.ellipse(0, 0, 10, 10)
+        p.translate(CONSTANTS.PLANET_MAX_RADIUS * 2, CONSTANTS.PLANET_MAX_RADIUS * 2)
+        p.rotate(angle)
+        let x, y, red, green, index
+        for (let i = 0, l = 2 * CONSTANTS.VISION.SIDE; i < l; i++) {
+          x = -(CONSTANTS.VISION.SIDE * CONSTANTS.VISION.WIDTH) + i * CONSTANTS.VISION.WIDTH
+          for (let j = 0, ll = CONSTANTS.VISION.TOP + CONSTANTS.VISION.BOTTOM; j < ll; j++){
+            y = -(CONSTANTS.VISION.TOP * CONSTANTS.VISION.WIDTH) + j * CONSTANTS.VISION.WIDTH
+            red = (vision[i][j] * 255)
+            green = 255 - red
+            // console.log('FILF', green, red, vision[index])
+            p.stroke(255)
+            p.fill(red, green, 0, 125)
+            p.rect(x, y, CONSTANTS.VISION.WIDTH, CONSTANTS.VISION.WIDTH)
+          }
+        }
+        // console.log(observations)
+        p.noStroke()
+        p.fill(255)
+        observations.forEach((o) => {
+          switch(o.type) {
+            case 'bo':
+            case 'p':
+            case 'b':
+            case 'a':
+              p.ellipse(o.x, o.y, o.r, o.r || 15)
+              break;
+            case 's':
+              p.ellipse(o.x, o.y, o.r, o.r)
+              break;
+            case 'w':
+              p.strokeWeight(4)
+              p.stroke(0, 255, 0)
+              p.line(o.x1, o.y1, o.x2, o.y2)
+              break;
+          }
+        })
+        p.pop()
+
+        if (target) {
+          p.push()
+          p.translate(target.x, target.y)
+          p.fill(255, 255, 0)
+          p.ellipse(0, 0, 10, 10)
+          p.pop()
+        }
+      } else {
+        const observations = observators[id].o
+        const angle = observators[id].a 
+        if(!observations || !observations.length) return
+        p.push()
+        p.translate(CONSTANTS.PLANET_MAX_RADIUS * 2, CONSTANTS.PLANET_MAX_RADIUS * 2)
+        p.push()
+        p.rotate(Math.PI / 2)
+        p.triangle(-CONSTANTS.SHIP_SIZE / 2, -CONSTANTS.SHIP_SIZE / 2, CONSTANTS.SHIP_SIZE / 2, -CONSTANTS.SHIP_SIZE / 2, 0, CONSTANTS.SHIP_SIZE/2)
+        p.pop()
+        // PLANETS
+        let ox, oy
+        const o = observators[id].o
+        if (o[0] !== 1 || o[1] !== 1) { // p1
+          p.stroke(0, 255, 0)
+          ox = lerp(o[0], -CONSTANTS.PLANET_MAX_RADIUS * 4, CONSTANTS.PLANET_MAX_RADIUS * 4)
+          oy = lerp(o[1], -CONSTANTS.PLANET_MAX_RADIUS * 4, CONSTANTS.PLANET_MAX_RADIUS * 4)
+          p.line(0, 0, ox, oy)
+        }
+        if (o[4] !== 1 || o[5] !== 1) { // p2
+          p.stroke(0, 255, 0)
+          ox = lerp(o[4], -CONSTANTS.PLANET_MAX_RADIUS * 4, CONSTANTS.PLANET_MAX_RADIUS * 4)
+          oy = lerp(o[5], -CONSTANTS.PLANET_MAX_RADIUS * 4, CONSTANTS.PLANET_MAX_RADIUS * 4)
+          p.line(0, 0, ox, oy)
+        }
+        // SHIPS
+        if (o[8] !== 1 || o[9] !== 1) { // p1
+          p.stroke(255, 0, 0)
+          ox = lerp(o[8], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
+          oy = lerp(o[9], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
+          p.line(0, 0, ox, oy)
+        }
+        if (o[14] !== 1 || o[15] !== 1) { // p2
+          p.stroke(255, 0, 0)
+          ox = lerp(o[14], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
+          oy = lerp(o[15], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
+          p.line(0, 0, ox, oy)
+        }
+        // ASTEROIDS
+        if (o[20] !== 1 || o[21] !== 1) { // p1
+          p.stroke(255, 0, 255)
+          ox = lerp(o[20], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
+          oy = lerp(o[21], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
+          p.line(0, 0, ox, oy)
+        }
+        if (o[24] !== 1 || o[25] !== 1) { // p2
+          p.stroke(255, 0, 255)
+          ox = lerp(o[24], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
+          oy = lerp(o[25], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
+          p.line(0, 0, ox, oy)
+        }
+        // BONUSES
+        if (o[28] !== 1 || o[29] !== 1) { // p1
+          p.stroke(0, 255, 0)
+          ox = lerp(o[28], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
+          oy = lerp(o[29], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
+          p.line(0, 0, ox, oy)
+        }
+        if (o[30] !== 1 || o[31] !== 1) { // p2
+          p.stroke(0, 255, 0)
+          ox = lerp(o[30], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
+          oy = lerp(o[31], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
+          p.line(0, 0, ox, oy)
+        }
+        // BULLETS
+        if (o[32] !== 1 || o[33] !== 1) { // p1
+          p.stroke(255, 0, 0)
+          ox = lerp(o[32], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
+          oy = lerp(o[33], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
+          p.line(0, 0, ox, oy)
+        }
+        if (o[36] !== 1 || o[37] !== 1) { // p2
+          p.stroke(255, 0, 0)
+          ox = lerp(o[36], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
+          oy = lerp(o[37], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
+          p.line(0, 0, ox, oy)
+        }
+        if (o[40] !== 1 || o[41] !== 1) { // p1
+          p.stroke(255, 0, 0)
+          ox = lerp(o[40], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
+          oy = lerp(o[41], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
+          p.line(0, 0, ox, oy)
+        }
+        if (o[44] !== 1 || o[45] !== 1) { // p2
+          p.stroke(255, 0, 0)
+          ox = lerp(o[44], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
+          oy = lerp(o[45], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
+          p.line(0, 0, ox, oy)
+        }
+        // WALLS
+        // if (o[48] !== 1 || o[49] !== 1) { // p1
+        //   p.stroke(255, 255, 0)
+        //   ox = lerp(o[48], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
+        //   oy = lerp(o[49], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
+        //   p.line(0, 0, ox, oy)
+        // }
+        // if (o[50] !== 1 || o[51] !== 1) { // p2
+        //   p.stroke(255, 255, 0)
+        //   ox = lerp(o[50], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
+        //   oy = lerp(o[51], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
+        //   p.line(0, 0, ox, oy)
+        // }
+        // if (o[52] !== 1 || o[53] !== 1) { // p1
+        //   p.stroke(255, 255, 0)
+        //   ox = lerp(o[52], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
+        //   oy = lerp(o[53], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
+        //   p.line(0, 0, ox, oy)
+        // }
+        // if (o[54] !== 1 || o[55] !== 1) { // p2
+        //   p.stroke(255, 255, 0)
+        //   ox = lerp(o[54], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
+        //   oy = lerp(o[55], -CONSTANTS.PLANET_MAX_RADIUS, CONSTANTS.PLANET_MAX_RADIUS)
+        //   p.line(0, 0, ox, oy)
+        // }
         p.pop()
       }
+      
     }
   }
 }

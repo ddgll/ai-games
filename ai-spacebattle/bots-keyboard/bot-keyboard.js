@@ -7,70 +7,67 @@ const Element = require('../statics/js/game/fElement')
 const Maths = require('../server/maths')
 const neurojs = require('../neurojs/framework')
 
+const DQNAgent = require('../rl.js')
+
 const ACTIONS_STRING = [
   'up',
   'upright',
   'upleft',
+  'right',
+  'left',
   'upfire',
   'fire'
 ]
 
 const states = (CONSTANTS.VISION.TOP + CONSTANTS.VISION.BOTTOM) * (CONSTANTS.VISION.SIDE * 2)
 console.log('STATES', states)
-const actions = 5
+const actions = ACTIONS_STRING.length
 const temporalWindow = 1
-const input = states + temporalWindow * (states + actions)
-const brains = {
-  actor: new neurojs.Network.Model([
-    { type: 'input', size: input },
-    // { type: 'fc', size: input * 2, activation: 'relu' },
-    // { type: 'fc', size: input * 2, activation: 'relu' },
-    { type: 'fc', size: input * 2, activation: 'relu', dropout: 0.5 },
-    { type: 'fc', size: actions, activation: 'tanh' },
-    { type: 'regression' }
 
-  ]),
-  critic: new neurojs.Network.Model([
-    { type: 'input', size: input + actions },
-    { type: 'fc', size: 100, activation: 'relu' },
-    { type: 'fc', size: 100, activation: 'relu' },
-    { type: 'fc', size: 1 },
-    { type: 'regression' }
-  ])
-}
+var env = {
+  getNumStates: function() {
+    return states;
+  },
+  getMaxNumActions: function() {
+    return actions;
+  }
+};
+
+const MAX_SPEED = 150;
+
+var spec = {};
+spec.update = 'qlearn'; // qlearn | sarsa
+spec.gamma = 0.9; // discount factor, [0, 1)
+spec.epsilon = 0.2; // initial epsilon for epsilon-greedy policy, [0, 1)
+spec.alpha = 0.01; // value function learning rate
+spec.experience_add_every = 10; // number of time steps before we add another experience to replay memory
+spec.experience_size = 15000; // size of experience
+spec.learning_steps_per_iteration = 20;
+spec.tderror_clamp = 1.0; // for robustness
+spec.num_hidden_units = 100 // number of neurons in hidden layer
 
 module.exports = class Bot {
   constructor (context, brainFile = './bots/best-bot.bin') {
     const saved = path.resolve(brainFile)
     let savedBrain = null
-    if (fs.existsSync(saved)){
-      const data = fs.readFileSync(saved)
-      if (data) {
-        try {
-          savedBrain = neurojs.NetOnDisk.readMultiPart(data.buffer)
-          if (savedBrain) console.log('SAVED BRAIN OK')
-        } catch (e) {
-          savedBrain = null
-        }
-      }
-    }
+    // if (fs.existsSync(saved)){
+    //   const data = fs.readFileSync(saved)
+    //   if (data) {
+    //     try {
+    //       savedBrain = neurojs.NetOnDisk.readMultiPart(data.buffer)
+    //       if (savedBrain) console.log('SAVED BRAIN OK')
+    //     } catch (e) {
+    //       savedBrain = null
+    //     }
+    //   }
+    // }
     const d = new Date()
     this.session = d.toISOString().replace(/[T:\.]{1}/g, '-').replace(/\-[0-9]+\-[0-9]+\-[0-9]+Z$/, '')
     this.sessionDir = path.resolve(`./brains/${this.session}`)
     if (!fs.existsSync(this.sessionDir)) fs.mkdirSync(this.sessionDir)
 
     this.seight = CONSTANTS.PLANET_MAX_RADIUS
-    this.brain = new neurojs.Agent({
-      type: 'sarsa', // q-learning or sarsa
-      network: savedBrain && savedBrain.actor ? savedBrain.actor.clone() : brains.actor,
-
-      states: states,
-      actions: actions,
-
-      algorithm: 'dqn', // ddpg or dqn
-
-      temporalWindow: temporalWindow, 
-    })
+    this.brain = new DQNAgent(env, spec)
 
     this.lastX = 0
     this.lastY = 0
@@ -99,6 +96,7 @@ module.exports = class Bot {
     // console.log('shipsId', shipsId, this.me)
     if (!this.me || !this.me.id) return true
     const index = shipsId.indexOf(this.me.id)
+    // console.log('UPDATE BOT', shipsId, index)
     if (index < 0) return false
     this.x = parseFloat(this.context.ships[this.me.id].context.x)
     this.y = parseFloat(this.context.ships[this.me.id].context.y)
@@ -106,6 +104,8 @@ module.exports = class Bot {
     this.life = parseFloat(this.context.ships[this.me.id].context.l)
     this.score = parseFloat(this.context.ships[this.me.id].context.s)
     this.god = parseFloat(this.context.ships[this.me.id].context.g)
+    if (this.label) this.calcReward()
+    // console.log(this.x, this.y, this.rotation, this.life)
     return true
   }
 
@@ -145,8 +145,8 @@ module.exports = class Bot {
     this.lastScore = 0
     this.context = context
     this.me = context.ships[data.ship.id]
-    this.lastX = parseFloat(this.me.context.x)
-    this.lastY = parseFloat(this.me.context.y)
+    if (!this.lastX) this.lastX = parseFloat(this.me.context.x)
+    if (!this.lastY) this.lastY = parseFloat(this.me.context.y)
     this.x = parseFloat(this.me.context.x)
     this.y = parseFloat(this.me.context.y)
     this.score = parseFloat(this.me.context.s)
@@ -162,8 +162,8 @@ module.exports = class Bot {
 
   get () {
     if (!this.me || !this.me.id) return
-    const god = parseInt(this.me.g)
-    if (god) return
+    // const god = parseInt(this.me.g)
+    // if (god) return
     return this.action(this.label)
   }
   
@@ -176,6 +176,10 @@ module.exports = class Bot {
         return [1,-CONSTANTS.TURN_ANGLE,0]
       case 'upright':
         return [1,CONSTANTS.TURN_ANGLE,0]
+      case 'left':
+        return [0,-CONSTANTS.TURN_ANGLE,0]
+      case 'right':
+        return [0,CONSTANTS.TURN_ANGLE,0]
       case 'upfire':
         return [1,0,1]
       case 'fire':
@@ -202,7 +206,7 @@ module.exports = class Bot {
   getNormType (type) {
     switch(type) {
       case 'bo': return -.1
-      case 'w': return .9
+      case 'w': return .5
       case 'p': return .5
       case 'b': return .2
       case 's': return .4
@@ -220,26 +224,30 @@ module.exports = class Bot {
       y = parseFloat(p.context.y) 
       r = parseFloat(p.context.r)
       v = this.getShipCoordinates(x, y, this.rotation)
-      if (bounds.circleCollide(v.x, v.y, r)) obs.push({ type: 'p', p: this.getNormType('p'), x: v.x, y: v.y, r })
+      // if (bounds.circleCollide(v.x, v.y, r))
+      obs.push({ type: 'p', p: this.getNormType('p'), x: v.x, y: v.y, r })
     })
     ships.forEach(s => {
       if (this.me && +s.id === +this.me.id) return
       x = parseFloat(s.context.x)
       y = parseFloat(s.context.y)
       v = this.getShipCoordinates(x, y, this.rotation)
-      if (bounds.triangleCollide(v.x, v.y, CONSTANTS.SHIP_SIZE)) obs.push({ type: 's', p: this.getNormType('s'), x: v.x, y: v.y, r: CONSTANTS.SHIP_SIZE })
+      // if (bounds.triangleCollide(v.x, v.y, CONSTANTS.SHIP_SIZE))
+      obs.push({ type: 's', p: this.getNormType('s'), x: v.x, y: v.y, r: CONSTANTS.SHIP_SIZE })
     })
     asteroids.forEach(a => {
       x = parseFloat(a.context.x)
       y = parseFloat(a.context.y)
       v = this.getShipCoordinates(x, y, this.rotation)
-      if (bounds.circleCollide(v.x, v.y, CONSTANTS.ASTEROID_RADIUS, true)) obs.push({ type: 'a', p: this.getNormType('a'), x: v.x, y: v.y, r: CONSTANTS.ASTEROID_RADIUS })
+      // if (bounds.circleCollide(v.x, v.y, CONSTANTS.ASTEROID_RADIUS, true))
+      obs.push({ type: 'a', p: this.getNormType('a'), x: v.x, y: v.y, r: CONSTANTS.ASTEROID_RADIUS })
     })
     bonuses.forEach(b => {
       x = parseFloat(b.context.x)
       y = parseFloat(b.context.y)
       v = this.getShipCoordinates(x, y, this.rotation)
-      if (bounds.circleCollide(v.x, v.y, CONSTANTS.BONUSES_RADIUS, true)) obs.push({ type: 'bo', p: this.getNormType('bo'), x: v.x, y: v.y, r: CONSTANTS.BONUSES_RADIUS })
+      // if (bounds.circleCollide(v.x, v.y, CONSTANTS.BONUSES_RADIUS, true))
+      obs.push({ type: 'bo', p: this.getNormType('bo'), x: v.x, y: v.y, r: CONSTANTS.BONUSES_RADIUS })
     })
     const reg = /^s[0-9]+$/
     const regrep = /[^0-9]/g
@@ -250,25 +258,39 @@ module.exports = class Bot {
       x = parseFloat(b.context.x)
       y = parseFloat(b.context.y)
       v = this.getShipCoordinates(x, y, this.rotation)
-      if (bounds.circleCollide(v.x, v.y, CONSTANTS.BULLET_RADIUS, true)) obs.push({ type: 'b', p: this.getNormType('b'), x: v.x, y: v.y, r: CONSTANTS.BULLET_RADIUS })
+      // if (bounds.circleCollide(v.x, v.y, CONSTANTS.BULLET_RADIUS, true))
+      obs.push({ type: 'b', p: this.getNormType('b'), x: v.x, y: v.y, r: CONSTANTS.BULLET_RADIUS })
     })
     let p1, p2
+    const wNorm = this.getNormType('w')
     // Mur gauche
     p1 = this.getShipCoordinates(0, 0, this.rotation)
     p2 = this.getShipCoordinates(0, CONSTANTS.HEIGHT, this.rotation)
-    if (bounds.lineCollide(p1.x, p1.y, p2.x, p2.y)) obs.push({ type: 'w', p: this.getNormType('w'), x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y })
+    //if (bounds.lineCollide(p1.x, p1.y, p2.x, p2.y) || true) {
+      //console.log('Mur gauche', this.rotation)
+      obs.push({ type: 'w', p: wNorm, x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y })
+    //}
     // Mur doites
     p1 = this.getShipCoordinates(CONSTANTS.WIDTH, 0, this.rotation)
     p2 = this.getShipCoordinates(CONSTANTS.WIDTH, CONSTANTS.HEIGHT, this.rotation)
-    if (bounds.lineCollide(p1.x, p1.y, p2.x, p2.y)) obs.push({ type: 'w', p: this.getNormType('w'), x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y })
-    // Mur haut
+    //if (bounds.lineCollide(p1.x, p1.y, p2.x, p2.y) || true) {
+      //console.log('Mur droite', this.rotation)
+      obs.push({ type: 'w', p: wNorm, x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y })
+    //}
+    // // Mur haut
     p1 = this.getShipCoordinates(0, 0, this.rotation)
     p2 = this.getShipCoordinates(CONSTANTS.WIDTH, 0, this.rotation)
-    if (bounds.lineCollide(p1.x, p1.y, p2.x, p2.y)) obs.push({ type: 'w', p: this.getNormType('w'), x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y })
-    // Mur bas
+    //if (bounds.lineCollide(p1.x, p1.y, p2.x, p2.y) || true) {
+      //console.log('Mur haut', this.rotation)
+      obs.push({ type: 'w', p: wNorm, x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y })
+    //}
+    // // Mur bas
     p1 = this.getShipCoordinates(0, CONSTANTS.HEIGHT, this.rotation)
     p2 = this.getShipCoordinates(CONSTANTS.WIDTH, CONSTANTS.HEIGHT, this.rotation)
-    if (bounds.lineCollide(p1.x, p1.y, p2.x, p2.y)) obs.push({ type: 'w', p: this.getNormType('w'), x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y })
+    //if (bounds.lineCollide(p1.x, p1.y, p2.x, p2.y) || true) {
+      //console.log('Mur bas', this.rotation)
+      obs.push({ type: 'w', p: wNorm, x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y })
+    //}
     
     const vision = bounds.getVision(obs)
 
@@ -289,60 +311,62 @@ module.exports = class Bot {
     console.log('REWARDS', this.roundReward(this.reward), this.roundReward(lifeReward), this.roundReward(scoreReward), this.roundReward(velReward))
   }
 
-  think () {
-    const ships = Object.values(this.context.ships)
-    const planets = Object.values(this.context.planets)
-    const bullets = Object.values(this.context.bullets)
-    const asteroids = Object.values(this.context.asteroids)
-    const bonuses = []
+  calcReward () {
     const me = this.me && this.me.context ? this.me.context : null
     if (!me || !me.id) {
       return null
     }
-    const squares = this.sense(planets, ships, asteroids, bonuses, bullets)
-    const vision = squares.reduce((a, b) => a.concat(b))
-    const angle = parseFloat(me.a)
-    const x = parseFloat(me.x)
-    const y = parseFloat(me.y)
-    this.x = x * 1.00
-    this.y = y * 1.00
+    const x = this.x
+    const y = this.y
     if (!this.lastX) this.lastX = x * 1.0
     if (!this.lastY) this.lastY = y * 1.0
     const life = parseFloat(this.life)
     const score = parseFloat(this.score)
-    const god = parseInt(this.god)
+    const distReward = Maths.distance(this.x, this.y, this.lastX, this.lastY)
     // if (god) return
-    let lifeReward = (!this.lastLife || this.lastLife === life) ? 1 : god ? 0 : Maths.norm(this.lastLife - life, 0, 10)
-    if (lifeReward < 0) lifeReward = 1
-    if (lifeReward > 1) lifeReward = 0
+    const lifeReward = (!this.lastLife || this.lastLife === life) ? 0 : this.lastLife - life
     const scoreReward = (score < 1 || this.lastScore > score) ? 0 : (score - this.lastScore)
-    this.reward = scoreReward - lifeReward * 10 // Maths.norm(lifeReward + scoreReward * 2, 0, 3)
+    // this.reward += scoreReward - lifeReward * 10 + distReward / 3 // Maths.norm(lifeReward + scoreReward * 2, 0, 3)
     if ((this.oldMe && me.id !== this.oldMe) || this.lastLife < life) {
-      // console.log('REWARD 0 Because of death')
-      this.reward = -1
+      this.reward -= 1
     }
+
+    if (lifeReward > 0) this.reward = -1
 
     this.oldMe = me.id
     this.lastScore = score * 1.00
     this.lastLife = life * 1
     this.lastX = x * 1.0
     this.lastY = y * 1.0
+  }
 
+  think () {
+    const ships = Object.values(this.context.ships)
+    const planets = Object.values(this.context.planets)
+    const bullets = Object.values(this.context.bullets)
+    const asteroids = Object.values(this.context.asteroids)
+    const bonuses = []
+    const squares = this.sense(planets, ships, asteroids, bonuses, bullets)
+    const vision = squares.reduce((a, b) => a.concat(b))
+    
     // console.log('REWARDS', this.reward, lifeReward, scoreReward)
-    const inputs = vision
-    this.loss = this.brain.learn(lifeReward) //this.reward)
-    this.outputs = this.brain.policy(inputs)
-    this.label = this.oneHotDecode(this.outputs)
+    const inputs = vision // .concat([ Maths.norm(this.x, 0, CONSTANTS.WIDTH), Maths.norm(this.y, 0, CONSTANTS.HEIGHT), Maths.norm(this.rotation, -Math.PI * 2, Math.PI * 2) ])
+    if (this.label) {
+      this.loss = this.brain.learn(this.reward) //this.reward)
+      console.log('REWARD', this.reward, this.brain.tderror.toFixed(3))
+      this.reward = 1
+    }
+    this.outputs = this.brain.act(inputs)
+    this.label = ACTIONS_STRING[this.outputs]
 
-    if (this.outputs < 0 || this.outputs > 4 || isNaN(this.outputs)) console.error('OUTPUT !!!', this.outputs)
+    if (this.outputs < 0 || this.outputs > (ACTIONS_STRING.length - 1) || isNaN(this.outputs)) console.error('OUTPUT !!!', this.outputs)
 
     inputs.forEach((ii, idx) => {
-      if (ii < 0 || ii > 1 || isNaN(ii)) console.error('INPUT !!!', ii, idx, x, y, vx, vy)
+      if (ii < 0 || ii > 1 || isNaN(ii)) console.error('INPUT !!!', ii, idx, x, y)
     })
 
     // console.log(inputs, inputs.length, this.outputs, this.reward, this.label)
     // console.log(this.reward, lifeReward, scoreReward, this.outputs)
-    // brains.shared.step()
     return this.label
   }
 }

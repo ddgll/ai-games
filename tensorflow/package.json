@@ -1,0 +1,16 @@
+{
+  "name": "dd-tensorflow",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon index.js --watch index.js --watch statics"
+  },
+  "author": "grilldotcom@gmail.com",
+  "license": "ISC",
+  "dependencies": {
+    "@tensorflow/tfjs": "^0.11.1",
+    "express": "^4.16.3",
+    "nodemon": "^1.17.4"
+  }
+}
