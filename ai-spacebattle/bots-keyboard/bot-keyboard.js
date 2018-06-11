@@ -22,7 +22,6 @@ const ACTIONS_STRING = [
 const states = (CONSTANTS.VISION.TOP + CONSTANTS.VISION.BOTTOM) * (CONSTANTS.VISION.SIDE * 2)
 console.log('STATES', states)
 const actions = ACTIONS_STRING.length
-const temporalWindow = 1
 
 var env = {
   getNumStates: function() {
@@ -33,18 +32,16 @@ var env = {
   }
 };
 
-const MAX_SPEED = 150;
-
 var spec = {};
 spec.update = 'qlearn'; // qlearn | sarsa
 spec.gamma = 0.9; // discount factor, [0, 1)
 spec.epsilon = 0.2; // initial epsilon for epsilon-greedy policy, [0, 1)
-spec.alpha = 0.01; // value function learning rate
+spec.alpha = 0.02; // value function learning rate
 spec.experience_add_every = 10; // number of time steps before we add another experience to replay memory
-spec.experience_size = 15000; // size of experience
-spec.learning_steps_per_iteration = 20;
+spec.experience_size = 30000; // size of experience
+spec.learning_steps_per_iteration = 40;
 spec.tderror_clamp = 1.0; // for robustness
-spec.num_hidden_units = 100 // number of neurons in hidden layer
+spec.num_hidden_units = 200 // number of neurons in hidden layer
 
 module.exports = class Bot {
   constructor (context, brainFile = './bots/best-bot.bin') {
@@ -91,7 +88,7 @@ module.exports = class Bot {
     this.lastScore = 0
   }
 
-  update () {
+  update (frames) {
     const shipsId = this.context.update()
     // console.log('shipsId', shipsId, this.me)
     if (!this.me || !this.me.id) return true
@@ -194,23 +191,24 @@ module.exports = class Bot {
         sin = Math.sin(angle),
         nx = (cos * (x - cx)) + (sin * (y - cy)) + cx,
         ny = (cos * (y - cy)) - (sin * (x - cx)) + cy;
-    return { x: nx, y: ny };
+    return { x: nx - this.x, y: ny - this.y };
   }
 
   getShipCoordinates (x, y, angle) {
-    const xp = (Math.cos(angle) * (x - this.x)) + (Math.sin(angle) * (y - this.y))
-    const yp = (-Math.sin(angle) * (x - this.x)) + (Math.cos(angle) * (y - this.y))
+    const a = angle + (Math.PI / 2)
+    const xp = (Math.cos(a) * (x - this.x)) + (Math.sin(a) * (y - this.y))
+    const yp = (-Math.sin(a) * (x - this.x)) + (Math.cos(a) * (y - this.y))
     return { x: xp, y: yp }
   }
 
-  getNormType (type) {
+  getNormType (type, shipBullet) {
     switch(type) {
       case 'bo': return -.1
-      case 'w': return .5
+      case 'w': return .8
       case 'p': return .5
-      case 'b': return .2
-      case 's': return .4
-      case 'a': return .3
+      case 'b': return shipBullet ? .5 : .3
+      case 's': return .2
+      case 'a': return .2
     }
     return .1
   }
@@ -218,12 +216,13 @@ module.exports = class Bot {
   sense (planets, ships, asteroids, bonuses, bullets) {
     const obs = []
     const bounds = new Bounds(CONSTANTS)
-    let x, y, r, v, ow
+    let x, y, r, v, ow, vp
     planets.forEach(p => {
       x = parseFloat(p.context.x)
       y = parseFloat(p.context.y) 
       r = parseFloat(p.context.r)
       v = this.getShipCoordinates(x, y, this.rotation)
+      vp = v
       // if (bounds.circleCollide(v.x, v.y, r))
       obs.push({ type: 'p', p: this.getNormType('p'), x: v.x, y: v.y, r })
     })
@@ -259,38 +258,41 @@ module.exports = class Bot {
       y = parseFloat(b.context.y)
       v = this.getShipCoordinates(x, y, this.rotation)
       // if (bounds.circleCollide(v.x, v.y, CONSTANTS.BULLET_RADIUS, true))
-      obs.push({ type: 'b', p: this.getNormType('b'), x: v.x, y: v.y, r: CONSTANTS.BULLET_RADIUS })
+      obs.push({ type: 'b', p: this.getNormType('b', reg.test(ow)), x: v.x, y: v.y, r: CONSTANTS.BULLET_RADIUS })
     })
-    let p1, p2
-    const wNorm = this.getNormType('w')
-    // Mur gauche
-    p1 = this.getShipCoordinates(0, 0, this.rotation)
-    p2 = this.getShipCoordinates(0, CONSTANTS.HEIGHT, this.rotation)
-    //if (bounds.lineCollide(p1.x, p1.y, p2.x, p2.y) || true) {
-      //console.log('Mur gauche', this.rotation)
-      obs.push({ type: 'w', p: wNorm, x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y })
-    //}
-    // Mur doites
-    p1 = this.getShipCoordinates(CONSTANTS.WIDTH, 0, this.rotation)
-    p2 = this.getShipCoordinates(CONSTANTS.WIDTH, CONSTANTS.HEIGHT, this.rotation)
-    //if (bounds.lineCollide(p1.x, p1.y, p2.x, p2.y) || true) {
-      //console.log('Mur droite', this.rotation)
-      obs.push({ type: 'w', p: wNorm, x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y })
-    //}
-    // // Mur haut
-    p1 = this.getShipCoordinates(0, 0, this.rotation)
-    p2 = this.getShipCoordinates(CONSTANTS.WIDTH, 0, this.rotation)
-    //if (bounds.lineCollide(p1.x, p1.y, p2.x, p2.y) || true) {
-      //console.log('Mur haut', this.rotation)
-      obs.push({ type: 'w', p: wNorm, x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y })
-    //}
-    // // Mur bas
-    p1 = this.getShipCoordinates(0, CONSTANTS.HEIGHT, this.rotation)
-    p2 = this.getShipCoordinates(CONSTANTS.WIDTH, CONSTANTS.HEIGHT, this.rotation)
-    //if (bounds.lineCollide(p1.x, p1.y, p2.x, p2.y) || true) {
-      //console.log('Mur bas', this.rotation)
-      obs.push({ type: 'w', p: wNorm, x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y })
-    //}
+    // let p1, p2
+    // const wNorm = this.getNormType('w')
+    // // Mur gauche
+    // p1 = this.getShipCoordinates(0, 0, this.rotation)
+    // p2 = this.getShipCoordinates(0, CONSTANTS.HEIGHT, this.rotation)
+    // //if (bounds.lineCollide(p1.x, p1.y, p2.x, p2.y) || true) {
+    //   //console.log('Mur gauche', this.rotation)
+    //   obs.push({ type: 'w', p: wNorm, x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y })
+    // //}
+    // // Mur doites
+    // p1 = this.getShipCoordinates(CONSTANTS.WIDTH, 0, this.rotation)
+    // p2 = this.getShipCoordinates(CONSTANTS.WIDTH, CONSTANTS.HEIGHT, this.rotation)
+    // //if (bounds.lineCollide(p1.x, p1.y, p2.x, p2.y) || true) {
+    //   //console.log('Mur droite', this.rotation)
+    //   obs.push({ type: 'w', p: wNorm, x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y })
+    // //}
+    // // // Mur haut
+    // p1 = this.getShipCoordinates(0, 0, this.rotation)
+    // p2 = this.getShipCoordinates(CONSTANTS.WIDTH, 0, this.rotation)
+    // //if (bounds.lineCollide(p1.x, p1.y, p2.x, p2.y) || true) {
+    //   //console.log('Mur haut', this.rotation)
+    //   obs.push({ type: 'w', p: wNorm, x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y })
+    // //}
+    // // // Mur bas
+    // p1 = this.getShipCoordinates(0, CONSTANTS.HEIGHT, this.rotation)
+    // p2 = this.getShipCoordinates(CONSTANTS.WIDTH, CONSTANTS.HEIGHT, this.rotation)
+    // //if (bounds.lineCollide(p1.x, p1.y, p2.x, p2.y) || true) {
+    //   //console.log('Mur bas', this.rotation)
+    //   obs.push({ type: 'w', p: wNorm, x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y })
+    // //}
+    let p1 = this.getShipCoordinates(CONSTANTS.WIDTH / 2, CONSTANTS.HEIGHT / 2, this.rotation)
+    // let p1 = this.rotate(0, 0, 0 - this.x, 0 - this.y, Math.PI / 2)
+    obs.push({ type: 'w', p: this.getNormType('w'), x: p1.x - CONSTANTS.WIDTH / 2, y: p1.y - CONSTANTS.HEIGHT / 2, w: CONSTANTS.WIDTH, h: CONSTANTS.HEIGHT })
     
     const vision = bounds.getVision(obs)
 
@@ -331,7 +333,7 @@ module.exports = class Bot {
       this.reward -= 1
     }
 
-    if (lifeReward > 0) this.reward = -1
+    if (lifeReward > 0) this.reward -= 1
 
     this.oldMe = me.id
     this.lastScore = score * 1.00
@@ -351,7 +353,7 @@ module.exports = class Bot {
     
     // console.log('REWARDS', this.reward, lifeReward, scoreReward)
     const inputs = vision // .concat([ Maths.norm(this.x, 0, CONSTANTS.WIDTH), Maths.norm(this.y, 0, CONSTANTS.HEIGHT), Maths.norm(this.rotation, -Math.PI * 2, Math.PI * 2) ])
-    if (this.label) {
+    if (this.label && this.brain.epsilon > 0) {
       this.loss = this.brain.learn(this.reward) //this.reward)
       console.log('REWARD', this.reward, this.brain.tderror.toFixed(3))
       this.reward = 1
@@ -362,9 +364,10 @@ module.exports = class Bot {
     if (this.outputs < 0 || this.outputs > (ACTIONS_STRING.length - 1) || isNaN(this.outputs)) console.error('OUTPUT !!!', this.outputs)
 
     inputs.forEach((ii, idx) => {
-      if (ii < 0 || ii > 1 || isNaN(ii)) console.error('INPUT !!!', ii, idx, x, y)
+      if (ii < 0 || ii > 1 || isNaN(ii)) console.error('INPUT !!!', ii, idx)
     })
 
+    console.log(this.brain.epsilon);
     // console.log(inputs, inputs.length, this.outputs, this.reward, this.label)
     // console.log(this.reward, lifeReward, scoreReward, this.outputs)
     return this.label

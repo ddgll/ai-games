@@ -1,4 +1,6 @@
 var context, scale, debug, debugObs = [], chartData = [['Time', 'Reward', 'Loss']], chart, obs = true, human = true, loop = true, logsDiv, observators = {}
+
+
 const sketch = (socket, scale) => {
   let logsDiv = document.getElementById('logs')
   let containerDiv = document.getElementById('container')
@@ -11,6 +13,19 @@ const sketch = (socket, scale) => {
   backgroundDiv.style.width = CONSTANTS.WIDTH + 'px'
   backgroundDiv.style.height = CONSTANTS.HEIGHT + 'px'
   let firstDiv = document.getElementById('first')
+  const epsilonInput = document.getElementById('epsilon')
+  const epsilonValue = document.getElementById('epsilonValue')
+  let sliderTimer
+  const changeEpsilon = () => {
+    const value = epsilonInput.value
+    if (sliderTimer) clearTimeout(sliderTimer)
+    sliderTimer = setTimeout(() => {
+      socket.emit('e', value / 10)
+      epsilonValue.innerText = (value / 10).toString()
+    }, 1000)
+  }
+  epsilonInput.addEventListener('keyup', changeEpsilon)
+
   let move = true, mouse, best, hold = false, xCenter, yCenter, nb = 0
   // const drawChart = (context) => {
   //   if (!context || !context.s || !context.s.length || !google || !google.visualization || !google.visualization.arrayToDataTable || !google.visualization.LineChart) return
@@ -53,16 +68,18 @@ const sketch = (socket, scale) => {
           btn.innerHTML = 'Start'
         }
       })
+
       debug = p
       p.simul = true
       p.noStroke()
-      const canvas = p.createCanvas(CONSTANTS.CANVAS_WIDTH, CONSTANTS.CANVAS_HEIGHT)
+      p.createCanvas(CONSTANTS.CANVAS_WIDTH, CONSTANTS.CANVAS_HEIGHT)
       p.frameRate(30)
 
       xCenter = CONSTANTS.CANVAS_WIDTH / 2
       yCenter = CONSTANTS.CANVAS_HEIGHT / 2
 
       let counter = 0
+      
 
       socket.on('f', function (data) {
         console.log('SET Context')
@@ -132,7 +149,7 @@ const observe = (id) => {
     debugObs.push(p)
     p.setup = () => {
       p.noStroke()
-      const canvas = p.createCanvas(CONSTANTS.PLANET_MAX_RADIUS * 2, CONSTANTS.PLANET_MAX_RADIUS * 2)
+      const canvas = p.createCanvas(CONSTANTS.VISION.SIDE * 4 * CONSTANTS.VISION.WIDTH, CONSTANTS.VISION.TOP * 2 * CONSTANTS.VISION.WIDTH)
       p.frameRate(30)
 
 
@@ -160,8 +177,10 @@ const observe = (id) => {
           return
         }
         p.push()
-        p.translate(CONSTANTS.PLANET_MAX_RADIUS * 2, CONSTANTS.PLANET_MAX_RADIUS * 2)
+        p.translate(CONSTANTS.VISION.SIDE * 4 * CONSTANTS.VISION.WIDTH, CONSTANTS.VISION.TOP * 2 * CONSTANTS.VISION.WIDTH)
+        p.fill(255, 255, 0)
         p.rotate(angle)
+        p.triangle(CONSTANTS.SHIP_SIZE/2, CONSTANTS.SHIP_SIZE/2, -CONSTANTS.SHIP_SIZE/2, CONSTANTS.SHIP_SIZE/2, 0, -CONSTANTS.SHIP_SIZE/2)
         let x, y, red, green, index
         for (let i = 0, l = 2 * CONSTANTS.VISION.SIDE; i < l; i++) {
           x = -(CONSTANTS.VISION.SIDE * CONSTANTS.VISION.WIDTH) + i * CONSTANTS.VISION.WIDTH
@@ -192,7 +211,8 @@ const observe = (id) => {
             case 'w':
               p.strokeWeight(4)
               p.stroke(0, 255, 0)
-              p.line(o.x1, o.y1, o.x2, o.y2)
+              p.noFill()
+              p.rect(o.x, o.y, o.w, o.h)
               break;
           }
         })

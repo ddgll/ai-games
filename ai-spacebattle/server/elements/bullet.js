@@ -94,7 +94,7 @@ module.exports = class Bullet extends Element {
       y = s.y
       if (this.shipCollide(x, y, CONSTANTS.SHIP_SIZE)) {
         this.life = 0
-        s.setCollide(0, 30)
+        s.setCollide(this.x, this.y, 3, 30)
         const ownership = ships.find(s => 's' + s.id === this.owner)
         if (ownership) ownership.score += s.life > 0 ? 100 : 1000
         break

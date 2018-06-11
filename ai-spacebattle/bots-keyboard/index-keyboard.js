@@ -4,11 +4,11 @@ const Maths = require('../server/maths')
 const CONSTANTS = require('../statics/js/constants')
 const Bot = require('./bot-keyboard')
 
-const debug = true
+const debug = false
 let bot, counter = 0
 
-// const socket = io.connect('http://localhost:7770')
-const socket = io.connect('http://space-battle.io')
+const socket = io.connect('http://localhost:7770')
+// const socket = io.connect('http://space-battle.io')
 socket.on('connect', () => {
   const id = Maths.uuid()
 
@@ -28,6 +28,9 @@ socket.on('connect', () => {
   socket.on('c', (ctx) => {
     if (bot) bot.context.fromRemote(ctx)
   })
+  socket.on('e', (epsilon) => {
+    if (bot) bot.brain.epsilon = epsilon
+  })
 
   
   socket.on('die', (id) => {
@@ -41,7 +44,7 @@ socket.on('connect', () => {
 
   setInterval(() => {
     if (bot) {
-      if (!bot.update()) {
+      if (!bot.update(nc)) {
         enterGame()
       } else if (bot.me) {
         // console.log(coords)
@@ -73,7 +76,7 @@ socket.on('connect', () => {
     const f = new Date()
     const fin = f.getTime()
     if (fin - start > CONSTANTS.TIME) console.log('TIME TO Think too large !!', fin - start, 'ms', nc)
-    console.log('TIME TO Think', fin - start, 'ms', nc, bot.label)
+    console.log('TIME TO Think', fin - start, 'ms', nc, bot.label, bot.brain.epsilon)
   }, CONSTANTS.TIME)
 
   if (!bot) {

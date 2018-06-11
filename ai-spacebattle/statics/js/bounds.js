@@ -62,6 +62,22 @@ class Rect {
     return false
   }
 
+  rectCollide (x2, y2, w2, h2) {
+    const x = this.x,
+          y = this.y,
+          w = this.w, 
+          h = this.h
+    //2d
+    //add in a thing to detect rectMode CENTER
+    if (x + w >= x2 &&    // r1 right edge past r2 left
+        x <= x2 + w2 &&    // r1 left edge past r2 right
+        y + h >= y2 &&    // r1 top edge past r2 bottom
+        y <= y2 + h2) {    // r1 bottom edge past r2 top
+          return true;
+    }
+    return false;
+  }
+
   lineCollide (x1, y1, x2, y2, calcIntersection) {
     const rx = this.x,
           ry = this.y,
@@ -153,6 +169,32 @@ class Rect {
     const qr = a * a
     return qr
   }
+
+  between(min, p, max){
+    let result = false
+  
+    if ( min < max ){
+      if ( p > min && p < max ){
+        result = true;
+      }
+    }
+  
+    if ( min > max ){
+      if ( p > max && p < min){
+        result = true
+      }
+    }
+  
+    if ( p == min || p == max ){
+      result = true
+    }
+  
+    return result
+  }
+  
+  pointInRectangle (x, y) {
+    return (this.between(this.x, x, this.x + this.w) && this.between(this.y, y, this.y + this.h))
+  }
 }
 
 class Bounds extends Rect {
@@ -179,8 +221,8 @@ class Bounds extends Rect {
     return { x: nx, y: ny };
   }
 
-  getVision (objects) {
-    let x, y, rect, index, short, vision = []
+  getVision (objects, limits) {
+    let x, y, rect, short, vision = []
     for (let i = 0, l = 2 * this.constants.VISION.SIDE; i < l; i++) {
       x = -(this.constants.VISION.SIDE * this.constants.VISION.WIDTH) + i * this.constants.VISION.WIDTH
       if (typeof vision[i]) vision.push([])
@@ -202,7 +244,8 @@ class Bounds extends Rect {
               if (rect.triangleCollide(o.x, o.y, o.r)) vision[i][j] += o.p
               break;
             case 'w':
-              if (rect.lineCollide(o.x1, o.y1, o.x2, o.y2)) vision[i][j] += o.p
+              const limitsRect = new Rect(o.x, o.y, o.w, o.h)
+              if (!limitsRect.rectCollide(rect.x, rect.y, rect.w, rect.h)) vision[i][j] = 1
               break;
           }
         })

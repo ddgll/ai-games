@@ -13,8 +13,8 @@ const CONSTANTS = {
   HEIGHT: 800,
   CANVAS_WIDTH: 400,
   CANVAS_HEIGHT: 400,
-  NB_PLANETS: 2,
-  NB_ASTEROID: 5,
+  NB_PLANETS: 5,
+  NB_ASTEROID: 15,
   PLANET_BULLET_COUNT: 3,
   MAX_PLAYER: 1,
   AIR_RESISTENCE: 0.95,
@@ -22,10 +22,10 @@ const CONSTANTS = {
   SEND_TIME: 40,
 
   VISION: {
-    WIDTH: 40,
-    TOP: 6,
-    BOTTOM: 6,
-    SIDE: 6
+    WIDTH: 20,
+    TOP: 10,
+    BOTTOM: 3,
+    SIDE: 4
   },
 
   ASTEROID_FIXED: false,

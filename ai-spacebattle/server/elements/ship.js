@@ -170,11 +170,11 @@ module.exports = class Ship extends Element {
   setCollide (x, y, collide, life, noGod, wall = false) {
     if (this.dead) return
     if (this.collide === 0) {
-      if (this.collide > 5) {
-        this.beforeAngle = this.rotation * 1.00
-      } else {
-        this.beforeAngle = -this.rotation * 1.00
-      }
+      // if (this.collide > 5) {
+      //   this.beforeAngle = this.rotation * 1.00
+      // } else {
+      //   this.beforeAngle = -this.rotation * 1.00
+      // }
       if (this.god === 0) {
         this.life -= life * CONSTANTS.DIFFICULTY
         if (!noGod) this.god = 50
@@ -200,6 +200,13 @@ module.exports = class Ship extends Element {
       // }
       this.vel.x -= ax;
       this.vel.y -= ay;
+
+      const angle = Maths.angleBetween(0, 0, x - this.x, y - this.y)
+      if (wall) {
+        this.vel = Maths.fromAngle(angle, this.speed)
+      } else {
+        this.vel = Maths.fromAngle(angle + Math.PI, this.speed)
+      }
     }
     this.collide = collide
   }
@@ -257,14 +264,13 @@ module.exports = class Ship extends Element {
       y = p.y
       r = p.radius / 2
       if (this.circleCollide(x, y, r)) {
-        // this.gravitateTo({ x, y, mass: p.mass, repulsive: true })
         if (p.owner === this.id) {
           this.setCollide(x, y, 10, 10, false)
         } else {
           this.setCollide(x, y, 10, 20, false)
         }
         break
-      } else if (!this.collide) {
+      } else if (!this.collide && !this.god) {
         this.gravitateTo(p)
       }
     }
@@ -282,7 +288,7 @@ module.exports = class Ship extends Element {
       a = asteroids[i]
       x = a.x
       y = a.y
-      if (this.circleCollide(x, y, CONSTANTS.ASTEROID_RADIUS)) this.setCollide(x, y, 5, 20)
+      if (this.circleCollide(x, y, CONSTANTS.ASTEROID_RADIUS)) this.setCollide(x, y, 5, 20, true)
     }
     const collide = this.worldCollide()
     if (collide && CONSTANTS.TRAINING) {
@@ -290,16 +296,16 @@ module.exports = class Ship extends Element {
       this.life -= 5
     }
     if (this.collide > 0) {
-      if (this.collide > 5) {
-        this.rotation += 0.5
-        this.rotation = this.rotation % (Math.PI * 2)
-      }
+      // if (this.collide > 5) {
+      //   this.rotation += 0.5
+      //   this.rotation = this.rotation % (Math.PI * 2)
+      // }
       this.collide--
-      if (this.collide === 0) {
-        this.vel.x = 0
-        this.vel.y = 0
-        this.rotation = this.beforeAngle + Math.PI
-      }
+      // if (this.collide === 0) {
+      //   this.vel.x = 0
+      //   this.vel.y = 0
+      //   // this.rotation = this.beforeAngle + Math.PI
+      // }
     }
     this.x += this.vel.x + this.gra.x
     this.y += this.vel.y + this.gra.y
@@ -346,18 +352,18 @@ module.exports = class Ship extends Element {
           y2 = this.y-this.size/2,
           x3 = this.x,
           y3 = this.y + this.size / 2
-    if (x1 < this.xMin) return { x: this.xMin, y: this.y }
-    if (x1 > this.xMax) return { x: this.xMax, y: this.y }
-    if (y1 < this.yMin) return { x: this.x, y: this.yMin }
-    if (y1 > this.yMax) return { x: this.x, y: this.yMax }
-    if (x2 < this.xMin) return { x: this.xMin, y: this.y }
-    if (x2 > this.xMax) return { x: this.xMax, y: this.y }
-    if (y2 < this.yMin) return { x: this.x, y: this.yMin }
-    if (y2 > this.yMax) return { x: this.x, y: this.yMax }
-    if (x3 < this.xMin) return { x: this.xMin, y: this.y }
-    if (x3 > this.xMax) return { x: this.xMax, y: this.y }
-    if (y3 < this.yMin) return { x: this.x, y: this.yMin }
-    if (y3 > this.yMax) return { x: this.x, y: this.yMax }
+    if (x1 < this.xMin) return { x: CONSTANTS.WIDTH / 2, y: CONSTANTS.HEIGHT / 2 } // { x: this.xMin, y: this.y }
+    if (x1 > this.xMax) return { x: CONSTANTS.WIDTH / 2, y: CONSTANTS.HEIGHT / 2 } // { x: this.xMax, y: this.y }
+    if (y1 < this.yMin) return { x: CONSTANTS.WIDTH / 2, y: CONSTANTS.HEIGHT / 2 } // { x: this.x, y: this.yMin }
+    if (y1 > this.yMax) return { x: CONSTANTS.WIDTH / 2, y: CONSTANTS.HEIGHT / 2 } // { x: this.x, y: this.yMax }
+    if (x2 < this.xMin) return { x: CONSTANTS.WIDTH / 2, y: CONSTANTS.HEIGHT / 2 } // { x: this.xMin, y: this.y }
+    if (x2 > this.xMax) return { x: CONSTANTS.WIDTH / 2, y: CONSTANTS.HEIGHT / 2 } // { x: this.xMax, y: this.y }
+    if (y2 < this.yMin) return { x: CONSTANTS.WIDTH / 2, y: CONSTANTS.HEIGHT / 2 } // { x: this.x, y: this.yMin }
+    if (y2 > this.yMax) return { x: CONSTANTS.WIDTH / 2, y: CONSTANTS.HEIGHT / 2 } // { x: this.x, y: this.yMax }
+    if (x3 < this.xMin) return { x: CONSTANTS.WIDTH / 2, y: CONSTANTS.HEIGHT / 2 } // { x: this.xMin, y: this.y }
+    if (x3 > this.xMax) return { x: CONSTANTS.WIDTH / 2, y: CONSTANTS.HEIGHT / 2 } // { x: this.xMax, y: this.y }
+    if (y3 < this.yMin) return { x: CONSTANTS.WIDTH / 2, y: CONSTANTS.HEIGHT / 2 } // { x: this.x, y: this.yMin }
+    if (y3 > this.yMax) return { x: CONSTANTS.WIDTH / 2, y: CONSTANTS.HEIGHT / 2 } // { x: this.x, y: this.yMax }
     return null
   }
 

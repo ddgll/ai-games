@@ -19,6 +19,12 @@ const angleBetween = (x1, y1, x2, y2) => {
   return a
 }
 
+const fromAngle = (angle, length) => {
+  const x = Math.cos(angle) * length
+  const y = Math.sin(angle) * length
+  return { x, y }
+}
+
 const randomInt = (min, max) => {
  return Math.floor(Math.random() * (max - min + 1)) + min;
 }
@@ -103,6 +109,7 @@ module.exports = {
   collideTriangleTriangle,
   inRange,
   lerp,
+  fromAngle,
   map,
   norm,
   magnitude,

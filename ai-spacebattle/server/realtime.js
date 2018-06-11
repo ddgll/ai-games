@@ -42,6 +42,10 @@ module.exports = function (io) {
       game.moveShip(id, x, y)
     })
 
+    socket.on('e', (epsilon) => {
+      io.emit('e', epsilon)
+    })
+
     socket.on('k', ([boosting, angle, fire]) => {
       game.moveKeyboardShip(id, boosting, angle, fire)
     })
