@@ -90,7 +90,7 @@ const sketch = (socket, name) => {
         }
       }
       if (m) {
-        console.log('MOUSE MOVE', m)
+        // console.log('MOUSE MOVE', m)
         socket.emit('m', [m.x,m.y])
       }
     }
@@ -221,12 +221,12 @@ function init () {
   })
 
   socket.on('connect', function () {
-    setTimeout(() => {
-      const name = nameInput.value
-      if (form.style.display === 'none' && name.length) {
-        socket.emit('s', name)
-      }
-    }, 3000)
+    // setTimeout(() => {
+    //   const name = nameInput.value
+    //   if (form.style.display === 'none' && name.length) {
+    //     socket.emit('s', name)
+    //   }
+    // }, 3000)
   })
 }
 

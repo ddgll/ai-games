@@ -37,37 +37,7 @@ var bestNumGen = 0
 var nb3Turns = 0
 var numGeneration = 0
 var winners
-var cars
-var chart
-var chartData = [['Time', 'Reward', 'Loss']]
-
-const addInChart = (frames_) => {
-  if (!cars || !cars.length) return
-  let sumR = 0, sumL = 0
-  cars.forEach(s => {
-    sumR += s.reward
-    sumL += isNaN(s.loss) ? 0 : s.loss
-  })
-  const moyR = sumR / cars.length
-  const moyL = sumL / cars.length
-  chartData.push([frames_, moyR, moyL])
-}
-
-const drawChart = () => {
-  if (!cars || !cars.length || !google || !google.visualization || !google.visualization.arrayToDataTable || !google.visualization.LineChart) return
-  var data = google.visualization.arrayToDataTable(chartData);
-  var options = {
-    title: 'Training',
-    curveType: 'function',
-    legend: { position: 'bottom' }
-  };
-
-  if (!chart) chart = new google.visualization.LineChart(document.getElementById('chart'));
-
-  if (chartData.length > 500) chartData = [['Time', 'Reward', 'Loss']]
-
-  chart.draw(data, options)
-}
+var car
 
 function sqr(a) {
   return a*a;
@@ -88,7 +58,7 @@ function reset (noResetCircuits) {
 
 const chargeCircuit = (init) => {
   noLoop()
-  if (cars && cars.length) {
+  if (car) {
     bestScore = 0
     bestBrain
     bestScore = -Infinity
@@ -96,10 +66,6 @@ const chargeCircuit = (init) => {
     bestFrames = 0
     bestNumGen = 0
     numGeneration = 0
-  }
-  if (POPULATION !== nextNbPopulation) {
-    POPULATION = nextNbPopulation
-    if (cars && cars.length) cars = []
   }
   db.circuits.where('size').equals(DEFAULT_CIRCUIT_SIZE).toArray().then((circuits) => {
     if (!circuits || !circuits.length) {
@@ -109,19 +75,16 @@ const chargeCircuit = (init) => {
     const dna = random(circuits)
     circuit = new Circuit(X_START, Y_START, DEFAULT_CIRCUIT_SIZE, dna.dna, false, false, dna.id)
     circuit.roadsFromDna()
-    if (cars && cars.length) {
-      if (best) best.reset()
-      cars.forEach(c => c.reset(X_START, Y_START))
+    if (car) {
+      car.reset(X_START, Y_START)
       console.log('START GAMLE')
       loop()
     }
     if (testCar) testCar.reset()
 
     if (init) {
-      cars = []
-      for (let i = 0; i < nextNbPopulation; i++) {
-        cars.push(new Car(X_START, Y_START))
-      }
+      car = new Car(X_START, Y_START)
+      car.first = true
       loop()
     }
 
@@ -138,9 +101,6 @@ const chargeCircuit = (init) => {
 }
 
 function setup () {
-  google.charts.load('current', {'packages':['corechart']});
-  google.charts.setOnLoadCallback(drawChart)
-
   db = new Dexie("ai-racer")
   db.version(1).stores({
     circuits: 'id,size',
@@ -192,23 +152,14 @@ function setup () {
   button = createButton('TEST Mode')
   button.position(uiX, uiY+=40);
   button.mousePressed(() => {
+    if (!circuit) chargeCircuit(false)
     if (testCar) {
       testCar = null
     } else {
+      car = null
       testCar = new Car(X_START, Y_START, null, false, true)
     }
   })
-  var p = createP('Nombre de clônes')
-  p.position(uiX, uiY+=40)
-  selectPopulation = createSelect()
-  selectPopulation.position(uiX, uiY+=40)
-  selectPopulation.changed(() => {
-    nextNbPopulation = +selectPopulation.value()
-  })
-  selectPopulation.option(1)
-  selectPopulation.option(2)
-  selectPopulation.option(3)
-  selectPopulation.option(4)
   
   p = createP('Choix du cerveau')
   p.position(uiX, uiY+=40)
@@ -242,25 +193,10 @@ function draw () {
         circuit.xCar = testCar.position.x
         circuit.yCar = testCar.position.y
       }
-      if (cars) {
-        let max = -Infinity
-        cars.forEach(c => {
-          c.first = false
-          c.update(circuit)
-          if (c.brain && c.brain.age === 999) sliderm.value(1)
-          if (!c.killed && c.score > max) {
-            max = c.score
-            first = c
-          }
-        })
-        if (first) first.first = true
-      }
-      if (best) {
-        best.think(circuit)
-        best.update(circuit)
+      if (car) {
+        car.update(circuit)
       }
     }
-    addInChart(framess++)
   }
 
   background(0)
@@ -274,13 +210,10 @@ function draw () {
 
   if (circuit) {
     circuit.draw()
-    if (cars) cars.forEach(c => c.draw())
-    if (best) best.draw()
+    if (car) car.draw()
     if (testCar) testCar.draw()
   }
   if (roads) roads.forEach(r => r.draw())
-
-  drawChart()
 }
 
 String.prototype.capitalize = function () {

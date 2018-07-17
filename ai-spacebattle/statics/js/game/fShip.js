@@ -27,12 +27,12 @@ class Ship extends Element {
     const r = this.renderer
     const a = parseFloat(this.context.a) - Math.PI / 2
     const l = parseInt(this.context.l)
-    const s = parseInt(this.context.s)
-    const d = parseInt(this.context.d)
+    // const s = parseInt(this.context.s)
+    // const d = parseInt(this.context.d)
     const g = parseInt(this.context.g)
-    const tx = parseInt(this.context.tx)
-    const ty = parseInt(this.context.ty)
-    const o = this.context.o
+    // const tx = parseInt(this.context.tx)
+    // const ty = parseInt(this.context.ty)
+    // const o = this.context.o
     if (l > 0) {
       const alpha = 255 - g * 10
       if (player && id === player.id) {
@@ -48,8 +48,8 @@ class Ship extends Element {
       r.strokeWeight(1)
       r.noFill()
       r.rect(x - CONSTANTS.SHIP_SIZE, y + CONSTANTS.SHIP_SIZE, CONSTANTS.SHIP_SIZE * 2, 4)
-      const length = r.simul ? (String(s).length * 3) : (this.name.length * 3)
-      const name = r.simul ? s : this.name
+      const length = this.name.length * 3
+      const name = this.name
       r.strokeWeight(0.5)
       // r.text(this.name, x - length, y + CONSTANTS.SHIP_SIZE + 20)
       r.text(name, x - length, y + CONSTANTS.SHIP_SIZE + 20)
@@ -57,11 +57,11 @@ class Ship extends Element {
       r.translate(x, y)
       r.rotate(a)
 
-      const getShipCoordinates = (x_, y_, angle) => {
-        const xp = (Math.cos(angle) * (x_ - x)) + (Math.sin(angle) * (y_ - y))
-        const yp = (-Math.sin(angle) * (x_ - x)) + (Math.cos(angle) * (y_ - y))
-        return { x: xp, y: yp }
-      }
+      // const getShipCoordinates = (x_, y_, angle) => {
+      //   const xp = (Math.cos(angle) * (x_ - x)) + (Math.sin(angle) * (y_ - y))
+      //   const yp = (-Math.sin(angle) * (x_ - x)) + (Math.cos(angle) * (y_ - y))
+      //   return { x: xp, y: yp }
+      // }
 
       // const bounds = new Bounds(CONSTANTS)
       // r.stroke(255)

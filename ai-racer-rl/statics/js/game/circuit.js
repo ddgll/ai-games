@@ -232,16 +232,25 @@ class Circuit {
     return false
   }
 
+  setCarRoad (car) {
+    const x = car.position.x
+    const y = car.position.y
+    const r = car.r
+    car.road = null
+    for (let i = 0, l = this.roads.length, road; i < l; i++) {
+      road = this.roads[i]
+      if (road.contains(x, y, r, false)) car.road = road
+    }
+  }
+
   getOptimalDirectionDiff (car) {
     const x = car.position.x
     const y = car.position.y
-    let found, road
+    const r = car.r
     car.road = null
-    for (let i = 0, l = this.roads.length; i < l; i++) {
+    for (let i = 0, l = this.roads.length, road; i < l; i++) {
       road = this.roads[i]
-      if (road.contains(x, y)) {
-        car.road = road
-      }
+      if (road.contains(x, y, 0, false)) car.road = road
     }
     return this.getOptimal(car)
   }
@@ -267,18 +276,14 @@ class Circuit {
   checkCar (car) {
     const x = car.position.x
     const y = car.position.y
+    const r = car.r
     let road, found, index, dist = 0, collide = false
     for (let i = 0, l = this.roads.length; i < l; i++) {
       road = this.roads[i]
-      if (road.collide(x, y) && !car.impact) {
-        car.impact = Math.sqrt(Math.pow(car.velocity.x, 2) + Math.pow(car.velocity.y, 2))
-        const roadAngle = (Math.atan2(car.y - road.y, car.x - road.x) + TWO_PI) % TWO_PI
-        const vCar = p5.Vector.fromAngle(roadAngle)
-        vCar.add(p5.Vector.random2D()).mult(2)
-        car.velocity = vCar
-        collide = true
-      }
-      if (road.contains(x, y)) {
+      if (road.collide(x, y, r)) collide = true
+      if (road.contains(x, y, r, true)) {
+        // if (found) dist += found.distance
+        // console.log('CONTAINED')
         const optimal = this.getOptimalDirectionDiff(car)
         // if (car.optimal > .5 && optimal < .5) {
         //   car.impact =  1 + car.optimal
@@ -298,12 +303,14 @@ class Circuit {
       }
     }
     if (found) {
+      // console.log('CAR Optimal', car.optimal)
       const np = found.getNormalizedPosition(car.position.x, car.position.y)
       dist += distance(found.x, found.y, np.x, np.y)
       if (car) car.checkDistance(found, index, dist, this.distance)
     } else if(!collide) {
       car.reset(X_START, Y_START)
     }
+    return collide
   }
 
   addRoad (dir) {

@@ -1,15 +1,11 @@
 'use strict';
 
 const Game = require('./game')
-const Ga = require('./ga')
-const fs = require('fs')
-const path = require('path')
-
+var game
 module.exports = function (io) {
 
-  var game, ga
-
   if (!game) {
+    console.log('CREATE NEW Game')
     game = new Game(io)
     game.startIntervals()
   }
@@ -17,18 +13,21 @@ module.exports = function (io) {
   return function (socket) {
     let context
     let id
+    let name
 
     socket.on('disconnect', () => {
-      console.log('Client disconnect', id)
-      game.removeShip(id)
+      if (id) {
+        console.log('Client disconnect', name)
+        game.removeShip(id)
+      }
     })
 
-    socket.on('s', (name) => {
-      if (!name || !name.length || name.length > 10 || name.length < 3) return
-      name = name.replace(/\|/g, '')
+    socket.on('s', (name_) => {
+      if (!name_ || !name_.length) return
+      name = name_.replace(/\|/g, '')
       console.log('Client connexion', name)
       if (!id || !game.context.ships.find(s => s.id === id)) {
-        context = game.addShip(name)
+        context = game.addShip(name, socket.id)
         id = context.ship.id
         socket.emit('f', context)
       }
@@ -37,13 +36,12 @@ module.exports = function (io) {
     socket.on('spectate', (name) => {
       socket.emit('f', { context: game.context.getContext() })
     })
+    socket.on('killallbots', () => {
+      io.emit('dienow')
+    })
 
     socket.on('m', ([x, y]) => {
       game.moveShip(id, x, y)
-    })
-
-    socket.on('e', (epsilon) => {
-      io.emit('e', epsilon)
     })
 
     socket.on('k', ([boosting, angle, fire]) => {
@@ -61,13 +59,7 @@ module.exports = function (io) {
       io.emit('o', { id, o: data.o, t: data.t, a: data.a })
     })
 
-    socket.on('d', (id) => {
-      const exists = game.exists(id)
-      console.log('CHECK Existance', id, exists)
-    })
-
     socket.on('c', ([x, y]) => {
-      console.log('SHOOT !')
       game.shoot(id, x, y)
     })
   }

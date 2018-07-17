@@ -1,6 +1,5 @@
 'use strict';
 
-const GameContext = require('./game-context')
 const Ship = require('./elements/ship')
 const Bullet = require('./elements/bullet')
 const Planet = require('./elements/planet')
@@ -16,7 +15,7 @@ module.exports = class GameContext {
     this.aids = 1
     this.sids = 1
     this.bids = 1
-    this.nbFlushHistory = options && options.nbFlushHistory ? options.nbFlushHistory : Math.round(500 / 30)
+    this.nbFlushMemmory = options && options.nbFlushMemmory ? options.nbFlushMemmory : Math.round(500 / 30)
     this.width = options && options.width ? options.width : CONSTANTS.WIDTH
     this.height = options && options.height ? options.height : CONSTANTS.HEIGHT
     this.xCenter = this.width / 2
@@ -37,7 +36,7 @@ module.exports = class GameContext {
     this.history = []
     this.createPlanets()
     this.createAsteroids()
-    console.log('Start game width', this.nbFlushHistory, ' memory')
+    console.log('Start game width', this.nbFlushMemmory, ' memory')
   }
 
   setGameOver(func) {
@@ -59,10 +58,7 @@ module.exports = class GameContext {
 
   exists (id) {
     const index = this.ships.findIndex(s => s.id === id)
-    if (index < 0) {
-      return false
-      this.io.emit('die', id)
-    }
+    if (index < 0) return false
     return true
   }
 
@@ -85,8 +81,8 @@ module.exports = class GameContext {
       }
       this.history.push({ id: ctx.id, t: ctx.t, d: diffs })
       const length = this.history.length
-      if (length > this.nbFlushHistory) {
-        this.history = this.history.slice(length - this.nbFlushHistory)
+      if (length > this.nbFlushMemmory) {
+        this.history = this.history.slice(length - this.nbFlushMemmory)
       }
     }
     this.snapshot = ctx
@@ -103,7 +99,7 @@ module.exports = class GameContext {
     }
     for (let i = 0, l = this.asteroids.length; i < l; i++) this.asteroids[i].update(this.ships)
     this.ships = this.ships.map(s => {
-      if (s.life < 0 || s.dead) this.io.emit('die', s.id)
+      if (s.life <= 0 || s.dead) this.io.to(s.socketId).emit('die', s.id)
       return s
     }).filter(s => s.life > 0)
     if (this.ships.filter(s => s.brain !== null).length === 0 && typeof this.gameover === 'function') this.gameover(this.counter)
@@ -190,7 +186,7 @@ module.exports = class GameContext {
     return { id: this.counter, t: time, s: ships, b: bullets, p: planets, bo: bonuses, a: asteroids }
   }
 
-  addShip (name, brain) {
+  addShip (name, socketId) {
     const id = this.sids++
     let x, y
     if (CONSTANTS.SHIP_SEE_SHIP) {
@@ -202,7 +198,7 @@ module.exports = class GameContext {
       x = 30
       y = 30
     }
-    const ship = new Ship(id, x, y, name, { xCenter: this.xCenter, yCenter: this.yCenter }, brain)
+    const ship = new Ship(id, x, y, name, { xCenter: this.xCenter, yCenter: this.yCenter }, socketId)
     this.ships.push(ship)
     return ship
   }

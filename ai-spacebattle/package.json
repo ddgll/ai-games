@@ -7,14 +7,16 @@
     "dev": "nodemon index.js --watch index.js --watch server --watch statics/js/constants.js",
     "bot-sensors": "nodemon bots-sensors/index-sensors.js --watch bots-sensors --watch server --watch statics/js/constants.js --watch statics/js/game/CoreContext.js --watch statics/js/game/fElement.js",
     "bot-target": "nodemon bots-target/index-target.js --watch bots-target --watch server --watch statics/js/constants.js --watch statics/js/bounds.js --watch statics/js/game/CoreContext.js --watch statics/js/game/fElement.js",
-    "bot-keyboard": "nodemon bots-keyboard/index-keyboard.js --watch bots-keyboard --watch server --watch statics/js/constants.js --watch statics/js/bounds.js --watch statics/js/game/CoreContext.js --watch statics/js/game/fElement.js"
+    "bot-keyboard": "nodemon bots-keyboard/index-keyboard.js --watch bots-keyboard --watch server --watch statics/js/constants.js --watch statics/js/bounds.js --watch statics/js/game/CoreContext.js --watch statics/js/game/fElement.js",
+    "bots": "node bots-keyboard/index-keyboard.js",
+    "ga": "node bots-ga/index.js"
   },
   "author": "grilldotcom@gmail.com",
   "license": "ISC",
   "dependencies": {
-    "colors": "^1.1.2",
     "binary-file": "^0.2.1",
     "clear": "^0.1.0",
+    "colors": "^1.1.2",
     "express": "^4.16.3",
     "neataptic": "^1.4.7",
     "nodemon": "^1.17.3",

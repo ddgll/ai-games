@@ -23,7 +23,7 @@ module.exports = class Game {
     this.intervalMilli = Math.round(1000 / this.frameRate)
     this.intervalMilliEmit = (this.intervalMilli / 2)
 
-    console.log('Launch game with', this.intervalMilli)
+    // console.log('Launch game with', this.intervalMilli)
   }
 
   stopIntervals () {
@@ -37,45 +37,54 @@ module.exports = class Game {
 
   startIntervals () {
     this.stopIntervals()
-    const emit = () => {
-      const window = this.context.getWindow()
-      this.io.emit('c', window)
-    }
+    // const emit = () => {
+    //   console.log('EMIT Changes')
+    //   const window = this.context.getWindow()
+    //   this.io.emit('c', window)
+    // }
     const update = () => {
       // const d = new Date().getTime()
       this.context.update()
+      const window = this.context.getWindow()
+      this.io.emit('c', window)
       // const f = new Date().getTime()
       // console.log('UPDATE Time:', f - d, 'ms')
     }
     this.context.update()
 
     this.interval = setInterval(update, this.intervalMilli)
-    this.intervalEmit = setInterval(emit, this.intervalMilliEmit)
+    // this.intervalEmit = setInterval(emit, this.intervalMilliEmit)
   }
 
-  addShip (name) {
-    const ship = this.context.addShip(name)
+  addShip (name, socketId) {
+    const ship = this.context.addShip(name, socketId)
+    // console.log('ADD Ship', name, ship)
     const context = this.context.getContext()
     return { ship, context }
   }
 
   moveShip (id, x, y, o) {
+    // console.log('MOVE Ship', id)
     this.context.moveShip(id, x, y, o)
   }
 
   moveKeyboardShip (id, boosting, angle, fire) {
+    // console.log('MOVE Ship keyboard', id, boosting, angle, fire)
     this.context.moveKeyboardShip(id, boosting, angle, fire)
   }
 
   exists (id) {
+    // console.log('Ecxists ?', id)
     return this.context.exists(id)
   }
 
   shoot (id, x, y) {
+    // console.log('SHOOT Ship', id)
     this.context.shoot(id, x, y)
   }
 
   removeShip (id) {
+    // console.log('Remove Ship', id)
     this.context.removeShip(id)
   }
 

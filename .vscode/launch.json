@@ -7,8 +7,22 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Lancer le programme",
+      "name": "Tensorflow",
+      "program": "${workspaceFolder}\\tensorflow\\index.js",
+      "cwd": "${workspaceFolder}\\tensorflow"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "SpaceBattleServer",
       "program": "${workspaceFolder}\\ai-spacebattle\\index.js",
+      "cwd": "${workspaceFolder}\\ai-spacebattle"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "SpaceBattleBotGA",
+      "program": "${workspaceFolder}\\ai-spacebattle\\bots-ga\\index.js",
       "cwd": "${workspaceFolder}\\ai-spacebattle"
     }
   ]

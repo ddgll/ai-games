@@ -2,15 +2,23 @@
   "name": "dd-tensorflow",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "statics/js/ui.js",
   "scripts": {
+    "watch": "cross-env NODE_ENV=development parcel statics/index.html --no-hmr --open",
     "dev": "nodemon index.js --watch index.js --watch statics"
   },
   "author": "grilldotcom@gmail.com",
   "license": "ISC",
   "dependencies": {
-    "@tensorflow/tfjs": "^0.11.1",
+    "@tensorflow/tfjs": "^0.11.6",
+    "babel-plugin-transform-runtime": "^6.23.0",
+    "babel-polyfill": "^6.26.0",
+    "babel-preset-env": "^1.7.0",
+    "cross-env": "^5.2.0",
     "express": "^4.16.3",
-    "nodemon": "^1.17.4"
+    "lodash": "^4.17.10",
+    "nodemon": "^1.17.5",
+    "parcel-bundler": "^1.9.1",
+    "vega-embed": "^3.15.0"
   }
 }

@@ -16,6 +16,10 @@ class CoreContext {
     this.element = element
   }
 
+  exists (id) {
+    return typeof this.ships[id] !== 'undefined' || typeof this.ships['' + id] !== 'undefined' || typeof this.ships[+id] !== 'undefined'
+  }
+
   setBounds (x, y) {
     this.bounds = {
       xMin: 0-x-this.constants.PLANET_MAX_RADIUS+2,

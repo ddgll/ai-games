@@ -12,19 +12,6 @@ const sketch = (socket, scale) => {
   let backgroundDiv = document.getElementById('background')
   backgroundDiv.style.width = CONSTANTS.WIDTH + 'px'
   backgroundDiv.style.height = CONSTANTS.HEIGHT + 'px'
-  let firstDiv = document.getElementById('first')
-  const epsilonInput = document.getElementById('epsilon')
-  const epsilonValue = document.getElementById('epsilonValue')
-  let sliderTimer
-  const changeEpsilon = () => {
-    const value = epsilonInput.value
-    if (sliderTimer) clearTimeout(sliderTimer)
-    sliderTimer = setTimeout(() => {
-      socket.emit('e', value / 10)
-      epsilonValue.innerText = (value / 10).toString()
-    }, 1000)
-  }
-  epsilonInput.addEventListener('keyup', changeEpsilon)
 
   let move = true, mouse, best, hold = false, xCenter, yCenter, nb = 0
   // const drawChart = (context) => {
@@ -55,19 +42,9 @@ const sketch = (socket, scale) => {
 
   return (p) => {
     p.setup = function () {
-      let btn = document.getElementById('loop')
-      btn.addEventListener('click', () => {
-        loop = !loop
-        if (loop) {
-          p.loop()
-          debugObs.forEach(po => po.loop())
-          btn.innerHTML = 'Stop'
-        } else {
-          p.noLoop()
-          debugObs.forEach(po => po.noLoop())
-          btn.innerHTML = 'Start'
-        }
-      })
+      const killAllBotsBtn = document.getElementById('kill')
+      const killAllBots = () => socket.emit('killallbots')
+      killAllBotsBtn.addEventListener('click', killAllBots)
 
       debug = p
       p.simul = true
@@ -93,7 +70,7 @@ const sketch = (socket, scale) => {
       socket.on('o', function ({ id, ship, o, a, t }) {
         if (!context) return
         if (!observators[id]) {
-          logsDiv.innerHTML += `<div id="obs-${id}"></div>`
+          logsDiv.innerHTML = `<div id="obs-${id}"></div>`
           setTimeout(() => {
             new p5(observe(id), `obs-${id}`)
           }, 1000)
@@ -164,6 +141,8 @@ const observe = (id) => {
       p.background(0)
       if (typeof observators[id] === 'undefined') {
         console.log('OBS undefined')
+        p.noLoop()
+        p.destroy()
         return
       }
 
@@ -371,7 +350,7 @@ function init () {
     new p5(sketch(socket, scale), 'game')
     setTimeout(() => {
       socket.emit('spectate')
-    }, 500)
+    }, 1000)
     setTimeout(() => {
       document.location.reload()
     }, 1000 * 60 * 10)

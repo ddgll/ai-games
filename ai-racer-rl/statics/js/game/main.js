@@ -197,7 +197,7 @@ String.prototype.capitalize = function () {
 function mouseMoved() {
   roads.forEach(r => {
     r.color = '#aeaeae'
-    if(r.collide(mouseX, mouseY)) r.color = '#ff0000'
+    if(r.collide(mouseX, mouseY, 0)) r.color = '#ff0000'
     // if(r.contains(mouseX, mouseY)) r.color = '#ffff00'
   })
 }
@@ -209,7 +209,7 @@ function keyPressed () {
   } else if (keyCode === RIGHT_ARROW) {
     code = 'right'
   } else if (keyCode === UP_ARROW) {
-    code = 'none'
+    code = 'up'
   } else if (keyCode === DOWN_ARROW) {
     if (test.roads.length === 0) {
       this.test.roads.push(new Road(test.x, test.y, 'rightLeft'))

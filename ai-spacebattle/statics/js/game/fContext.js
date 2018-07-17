@@ -76,9 +76,20 @@ class Context extends CoreContext {
         }
       }
     }
-    for (let id in this.ships) {
-      s = this.ships[id]
-      if (this.onScreen(s.context.x, s.context.y)) s.draw(me, observators[id])
+    if (observators) {
+      for (let id in this.ships) {
+        s = this.ships[id]
+        if (typeof observators[id] !== 'undefined' && this.onScreen(s.context.x, s.context.y)) {
+          s.draw(me, observators[id])
+        } else {
+          s.draw(me)
+        }
+      }
+    } else {
+      for (let id in this.ships) {
+        s = this.ships[id]
+        s.draw(me)
+      }
     }
     for (let i = 0, l = this.explosions.length, s; i < l; i++) {
       this.explosions[i].draw()

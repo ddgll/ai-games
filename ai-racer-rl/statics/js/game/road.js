@@ -46,26 +46,58 @@ class Road {
   //   })
   // }
 
-  contains (x, y) {
+  getCarPoints (x, y, r) {
+    const points = r ? [
+      { x: x - r, y: y - r },
+      { x: x - r, y: y + r },
+      { x: x + r, y: y + r },
+      { x: x + r, y: y - r }
+    ] : [
+      { x, y }
+    ]
+    return points
+  }
+
+  contains (x, y, r, one) {
+    const points = this.getCarPoints(x, y, r)
+    let nb = 0
     if (this.arc !== false) {
-      return collidePointArc(x, y, this.xCenter, this.yCenter, this.width / 2 - WALL_SIZE, this.rotation, HALF_PI)
+      for (let i = 0, l = points.length; i < l; i++)
+        if (collidePointArc(points[i].x, points[i].y, this.xCenter, this.yCenter, this.width / 2 - WALL_SIZE, this.rotation, HALF_PI)) nb++
+      // return collidePointArc(x, y, this.xCenter, this.yCenter, this.width / 2 - WALL_SIZE, this.rotation, HALF_PI)
     } else if (this.rect !== false) {
-      return collidePointRect(x, y, this.rect.x, this.rect.y, this.rect.w, this.rect.h)
+      for (let i = 0, l = points.length; i < l; i++)
+        if (collidePointRect(points[i].x, points[i].y, this.rect.x, this.rect.y, this.rect.w, this.rect.h)) nb++
+      // return collidePointRect(x, y, this.rect.x, this.rect.y, this.rect.w, this.rect.h)
+    } else {
+      return false
+    }
+    return one ? nb > 0 : nb === points.length
+  }
+
+  collide (x, y, r) {
+    // if (this.contains(x, y, r)) return false
+    const points = this.getCarPoints(x, y, r)
+    // if (this.contains(x, y)) return false
+    if (this.arc !== false) {
+      for (let i = 0, l = points.length; i < l; i++) {
+        if (collidePointArc(points[i].x, points[i].y, this.xCenter, this.yCenter, this.width / 2 + WALL_SIZE, this.rotation, HALF_PI) && // collide wall
+            !collidePointArc(points[i].x, points[i].y, this.xCenter, this.yCenter, this.width / 2 - WALL_SIZE, this.rotation, HALF_PI) // not on road
+          ) return true
+      }
+      // return collidePointArc(x, y, this.xCenter, this.yCenter, this.width / 2 + WALL_SIZE, this.rotation, HALF_PI)
+    } else if (this.rect !== false) {
+      for (let i = 0, l = points.length; i < l; i++) {
+        if (collidePointRect(points[i].x, points[i].y, this.wall.x, this.wall.y, this.wall.w, this.wall.h) &&
+            !collidePointRect(points[i].x, points[i].y, this.rect.x, this.rect.y, this.rect.w, this.rect.h)
+        ) return true
+      }
+      // return collidePointRect(x, y, this.wall.x, this.wall.y, this.wall.w, this.wall.h)
     }
     return false
   }
 
-  collide (x, y) {
-    if (this.contains(x, y)) return false
-    if (this.arc !== false) {
-      return collidePointArc(x, y, this.xCenter, this.yCenter, this.width / 2 + WALL_SIZE, this.rotation, HALF_PI)
-    } else if (this.rect !== false) {
-      return collidePointRect(x, y, this.wall.x, this.wall.y, this.wall.w, this.wall.h)
-    }
-    return false
-  }
-
-  collideLineArc (x_, y_, seight, a) {
+  collideLineArc (x_, y_, seight, a, one) {
     let x, y
     let d = seight / 2
     let n = seight / 4
@@ -73,7 +105,7 @@ class Road {
     while (n > SEIGHT_PAS && d <= seight && d > 0) {
       x = x_ + d * cos(a)
       y = y_ + d * sin(a)
-      if (!collidePointArc(x, y, this.xCenter, this.yCenter, this.width / 2 + WALL_SIZE, this.rotation, HALF_PI) || this.contains(x, y)) {
+      if (!collidePointArc(x, y, this.xCenter, this.yCenter, this.width / 2 + WALL_SIZE, this.rotation, HALF_PI) || this.contains(x, y, 0, one)) {
         d += n
       } else {
         obs = { x, y }
@@ -89,7 +121,7 @@ class Road {
     // console.log('collideLine', this.arc, this.rect, x, y, x2, y2, angle)
     let obs = {}
     if (this.arc !== false) {
-      obs = this.collideLineArc(x, y, seight, angle)
+      obs = this.collideLineArc(x, y, seight, angle, true)
       if (obs && obs.x && obs.y) return obs
     } else if (this.rect !== false) {
       let tmp = []

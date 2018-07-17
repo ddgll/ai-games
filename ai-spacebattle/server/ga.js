@@ -52,6 +52,11 @@ module.exports = class Ga {
 
     this.game = game
 
+
+    for (let i = 0; i < 1000; i++) {
+      this.neat.mutate()
+    }
+
     this.bots = []
   }
 

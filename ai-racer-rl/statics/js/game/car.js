@@ -10,7 +10,7 @@ const ACTIONS_STRING = [
   'nothing'
 ]
 
-const states = 14
+const states = 13
 const actions = ACTIONS_STRING.length
 var env = {
   getNumStates: function() {
@@ -22,7 +22,7 @@ var env = {
 };
 
 var spec = {};
-spec.update = 'qlearn'; // qlearn | sarsa
+spec.update = 'sarsa'; // qlearn | sarsa
 spec.gamma = 0.9; // discount factor, [0, 1)
 spec.epsilon = 0.2; // initial epsilon for epsilon-greedy policy, [0, 1)
 spec.alpha = 0.005; // value function learning rate
@@ -50,6 +50,10 @@ function Car (x, y, savedBrain, isBest, isTest) {
   this.sens = 1
 
   if (!isTest) {
+    // this.brain = new ActorCritic(states, ACTIONS_STRING.length, {
+    //   hidden1Size: states,
+    //   hidden2Size: states / 2
+    // })
     this.brain = new RL.DQNAgent(env, spec);
   } else {
     this.brain = null
@@ -126,7 +130,7 @@ function Car (x, y, savedBrain, isBest, isTest) {
     translate(this.position.x, this.position.y)
     text(Math.round(this.reward * 1000) / 1000, 0, -10)
     rotate(this.heading)
-    triangle(-this.r, -this.r, -this.r, this.r, this.r, 0)
+    triangle(-this.r, -this.r, -this.r, this.r, this.r, 0) 
     pop ()
     if (this.test || this.best || this.first) {
       push()
@@ -229,15 +233,12 @@ function Car (x, y, savedBrain, isBest, isTest) {
 
   this.sense = function (circuit) {
     const obstacles = []
-    this.optimal = circuit.getOptimalDirectionDiff(this)
-    if (!this.road) {
-      for (let i = 0, l = this.angles.length, a, x, y, n, obs; i < l; i++) obstacles.push(1)
-      return obstacles
-    }
-    for (let i = 0, l = this.angles.length, a, x, y, n, o, obs, sens; i < l; i++) {
+    // if (!this.road) {
+    //   for (let i = 0, l = this.angles.length; i < l; i++) obstacles.push(1)
+    //   return obstacles
+    // }
+    for (let i = 0, l = this.angles.length, a, obs; i < l; i++) {
       a = ((this.angles[i] + this.heading) + TWO_PI) % TWO_PI // (-HALF_PI + i * QUARTER_PI + this.heading)
-      o = circuit.getOptimal(this, a)
-      d = this.seight
       sv = this.getVectorSensor(a, this.position.x, this.position.y)
       obs = circuit.checkLine(this.position.x, this.position.y, sv.x, sv.y, this.currentIndex, this.seight, a)
       if (obs) {
@@ -259,72 +260,86 @@ function Car (x, y, savedBrain, isBest, isTest) {
         inputs.push(1)
       }
     })
-    inputs.push(this.sens)
-    inputs.push(this.optimal > .75 ? 1 : 0)
-    inputs.push(this.velocity.mag() / 10)
+    inputs.push(this.reverse)
+    // inputs.push(this.optimal > .75 ? 1 : 0)
+    inputs.push(this.velocity.mag() / 50)
     inputs.forEach((i, iids) => {
       if (i < 0 || i > 1) {
-        console.log('INPUTS NON NORMALISE !!', i, iids)
+        console.log('INPUTS NON NORMALISE !!', i, iids, inputs.length, this.velocity.mag())
       }
     })
     this.inputs = inputs
-    this.outputs = this.brain.act(inputs)
-    this.label = ACTIONS_STRING[this.outputs]
-    switch (this.label) {
-      case 'up':
-        this.breaking(false)
-        this.boosting(true)
-        this.setRotation(0)
-        break;
-      case 'upleft':
-        this.breaking(false)
-        this.boosting(true)
-        this.setRotation(-TURN_ANGLE)
-        break;
-      case 'upright':
-        this.breaking(false)
-        this.boosting(true)
-        this.setRotation(TURN_ANGLE)
-        break;
-      case 'left':
-        this.breaking(false)
-        this.boosting(false)
-        this.setRotation(-TURN_ANGLE)
-        break;
-      case 'right':
-        this.breaking(false)
-        this.boosting(false)
-        this.setRotation(TURN_ANGLE)
-        break;
-      case 'down':
-        this.breaking(true)
-        this.boosting(false)
-        this.setRotation(0)
-        break;
-      case 'downright':
-        this.breaking(true)
-        this.boosting(false)
-        this.setRotation(TURN_ANGLE)
-        break;
-      case 'downleft':
-        this.breaking(true)
-        this.boosting(false)
-        this.setRotation(-TURN_ANGLE)
-        break;
-      case 'nothing':
-        this.breaking(false)
-        this.boosting(false)
-        this.setRotation(0)
-        break;
-    }
+
+    // return this.brain.step(inputs, this.reward, this.dead, true).then((outputs) => {
+    return Promise.resolve(this.brain.act(inputs)).then(outputs => {
+      this.outputs = outputs
+      // this.label = this.oneHotDecode(this.outputs)
+      this.label = ACTIONS_STRING[this.outputs]
+      switch (this.label) {
+        case 'up':
+          this.breaking(false)
+          this.boosting(true)
+          this.setRotation(0)
+          break;
+        case 'upleft':
+          this.breaking(false)
+          this.boosting(true)
+          this.setRotation(-TURN_ANGLE)
+          break;
+        case 'upright':
+          this.breaking(false)
+          this.boosting(true)
+          this.setRotation(TURN_ANGLE)
+          break;
+        case 'left':
+          this.breaking(false)
+          this.boosting(false)
+          this.setRotation(-TURN_ANGLE)
+          break;
+        case 'right':
+          this.breaking(false)
+          this.boosting(false)
+          this.setRotation(TURN_ANGLE)
+          break;
+        case 'down':
+          this.breaking(true)
+          this.boosting(false)
+          this.setRotation(0)
+          break;
+        case 'downright':
+          this.breaking(true)
+          this.boosting(false)
+          this.setRotation(TURN_ANGLE)
+          break;
+        case 'downleft':
+          this.breaking(true)
+          this.boosting(false)
+          this.setRotation(-TURN_ANGLE)
+          break;
+        case 'nothing':
+          this.breaking(false)
+          this.boosting(false)
+          this.setRotation(0)
+          break;
+      }
+      return this.label
+    })
   }
 
   this.calcReward = function (circuit) {
     this.reward = 0
-    circuit.checkCar(this)
-    if (this.reward === -100) return
-    if (this.impact) return -this.impact
-    this.reward = Math.pow(this.velocity.y, 2) - 0.1 * Math.pow(this.velocity.x, 2)
+    const collide = circuit.checkCar(this)
+    // if (this.reward === -100) {
+    //   this.reward = -1
+    //   return collide
+    // }
+    this.reward = normalize(Math.pow(this.velocity.y, 2) - 0.1 * Math.pow(this.velocity.x, 2), 0, 15)
+    if (this.velocity.mag() < 1e-2) this.reward = 0
+    if (collide) {
+      this.reward -= 1
+      return collide
+    }
+    return collide
 
     if (this.velocity.mag() < 1e-2) {
       this.reward = normalize(this.optimal, 0, 15) / 2
@@ -333,6 +348,7 @@ function Car (x, y, savedBrain, isBest, isTest) {
       this.reward = normalize(this.reward, 0, 15)
     }
     if (this.reverse > (Math.PI / 4)) this.reward *= -1
+    return collide
   }
 
   this.turn = function () {
@@ -352,15 +368,6 @@ function Car (x, y, savedBrain, isBest, isTest) {
       this.turns++
     }
     const dist = distance + this.turns * totalDistance
-    // if (index % this.checkpoints === 0 && (this.distance > totalDistance || index > 0) && this.currentIndex !== index) {
-    //   const old = this.chronos.length ? this.chronos.map(c => c.frames).reduce((a, b) => a + b) : 0
-    //   this.chronos.push({ index, x, y, frames: this.frames - old })
-    // }
-    // if (dist >= this.distance) {
-    //   this.reverse = false
-    // } else {
-    //   this.reverse = true
-    // }
     this.distance = dist
     this.currentIndex = index
     if (index === this.roadsIndex || index === this.roadsIndex + 1 || (this.roadsIndex === DEFAULT_CIRCUIT_SIZE - 1 && index === 0)) {
@@ -373,7 +380,7 @@ function Car (x, y, savedBrain, isBest, isTest) {
     }
   }
 
-  this.update = function (circuit) {
+  this.update = async function (circuit) {
     this.velocity.mult(AIR_RESISTENCE)
     this.frames++
     // if (!this.test && this.frames - this.bestScoreFrame > 100) {
@@ -382,8 +389,9 @@ function Car (x, y, savedBrain, isBest, isTest) {
     // }
     // if (this.frames > (this.turns + 1) * 5000 || this.turns >= 3) this.crash()
     if (this.brain) {
-      this.think(circuit)
+      await this.think(circuit)
     }
+    this.oldPosition = this.position.copy()
     this.turn()
     if (this.isBoosting) {
       this.boost()
@@ -391,22 +399,11 @@ function Car (x, y, savedBrain, isBest, isTest) {
     if (this.isBreaking) {
       this.break()
     }
-    this.calcReward(circuit)
-    if (this.brain) {
-      // if (this.impact) this.crash()
-      this.contact = 0
-      this.impact = 0
-      this.loss = this.brain.learn(this.reward)
-    }
-    this.oldOldPosition = this.oldPosition.copy()
-    this.oldPosition = this.position.copy()
     this.position.add(this.velocity)
-    if (this.impact) {
-      if (!this.brain) this.impact = 0
-      this.oldOldPosition = this.oldOldPosition.copy()
-      this.oldPosition = this.oldOldPosition.copy()
-      this.position = this.oldOldPosition.copy()
+    const collide = this.calcReward(circuit)
+    if (collide) {
+      this.position = this.oldPosition
     }
-    // if (this.test && circuit) this.obstacles = this.sense(circuit)
+    this.brain.learn(this.reward)
   }
 }

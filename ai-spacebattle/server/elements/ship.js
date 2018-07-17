@@ -13,12 +13,8 @@ const Bullet = require('./bullet')
 const CONSTANTS = require('../../statics/js/constants')
 
 module.exports = class Ship extends Element {
-  constructor (id, x, y, name, options, brain) {
-    if (brain) {
-      super('bot-' + id, x, y, options)
-    } else {
-      super(id, x, y, options)
-    }
+  constructor (id, x, y, name, options, socketId) {
+    super(id, x, y, options)
     this.dead = false
     this.speed = CONSTANTS.SHIP_SPEED
     this.maxAcceleration = CONSTANTS.SHIP_MAX_ACC
@@ -27,7 +23,7 @@ module.exports = class Ship extends Element {
     this.score = 0
     this.lastScore = 0
 
-    this.brain = brain
+    this.socketId = socketId
     this.seight = CONSTANTS.PLANET_MAX_RADIUS
     this.nbSensors = 5
     this.angleFrames = 0
@@ -61,10 +57,10 @@ module.exports = class Ship extends Element {
     this.btimer = 0
     this.collide = 0
 
-    this.xMin = 0 + CONSTANTS.SHIP_SIZE
-    this.yMin = 0 + CONSTANTS.SHIP_SIZE
-    this.xMax = CONSTANTS.WIDTH - CONSTANTS.SHIP_SIZE
-    this.yMax = CONSTANTS.HEIGHT - CONSTANTS.SHIP_SIZE
+    this.xMin = 0
+    this.yMin = 0
+    this.xMax = CONSTANTS.WIDTH
+    this.yMax = CONSTANTS.HEIGHT
   }
 
   isNear (item, planets) {
@@ -115,7 +111,6 @@ module.exports = class Ship extends Element {
     this.outputs = null
     this.label = null
     this.dead = false
-    // if (this.brain && this.brain.training) this.brain.reset()
   }
 
   boost () {
@@ -154,7 +149,6 @@ module.exports = class Ship extends Element {
       const y = this.y + this.size * Math.sin(this.rotation)
       bullet.shoot(x, y, this.rotation)
       this.btimer = CONSTANTS.BULLET_LIFE / 3
-      if (CONSTANTS.TRAINING) this.life -= 0.2
     }
     return false
   }
@@ -175,7 +169,7 @@ module.exports = class Ship extends Element {
       // } else {
       //   this.beforeAngle = -this.rotation * 1.00
       // }
-      if (this.god === 0) {
+      if (this.god === 0 || wall) {
         this.life -= life * CONSTANTS.DIFFICULTY
         if (!noGod) this.god = 50
       }
@@ -212,10 +206,7 @@ module.exports = class Ship extends Element {
   }
 
   update (planets, ships, asteroids, bonuses, bullets) {
-    if (this.dead && !CONSTANTS.TRAINING) return
-    if (this.dead) {
-      this.reset()
-    }
+    if (this.dead) return
     super.update()
     this.frames++
     this.angleFrames++
@@ -249,12 +240,6 @@ module.exports = class Ship extends Element {
         this.turning = 0
       }
     }
-
-    // if (CONSTANTS.TRAINING && Maths.magnitude(this.vel.x, this.vel.y) < 1e-2) {
-    //   this.life--
-    // }
-
-    // if (this.score < 0) this.life--
     
     this.oldX = this.x * 1.00
     this.oldY = this.y * 1.00
@@ -291,7 +276,7 @@ module.exports = class Ship extends Element {
       if (this.circleCollide(x, y, CONSTANTS.ASTEROID_RADIUS)) this.setCollide(x, y, 5, 20, true)
     }
     const collide = this.worldCollide()
-    if (collide && CONSTANTS.TRAINING) {
+    if (collide) {
       this.setCollide(collide.x, collide.y, 10, 5, true, true)
       this.life -= 5
     }
@@ -321,14 +306,12 @@ module.exports = class Ship extends Element {
     if (!this.dead && this.life > 0) {
       const dist = Maths.distance(this.x, this.y, this.oldX, this.oldY)
       this.distance += dist / 100
+      if (dist < 1) this.life -= 2
     }
 
     if (this.life <= 0 || this.dead) {
       this.life = 0
       this.dead = true
-      if (CONSTANTS.TRAINING) {
-        this.reset()
-      }
     }
   }
 
@@ -346,10 +329,10 @@ module.exports = class Ship extends Element {
   }
 
   worldCollide () {
-    const x1 = this.x-this.size/2,
-          y1 = this.y-this.size/2,
+    const x1 = this.x - this.size/2,
+          y1 = this.y - this.size/2,
           x2 = this.x + this.size/2,
-          y2 = this.y-this.size/2,
+          y2 = this.y - this.size/2,
           x3 = this.x,
           y3 = this.y + this.size / 2
     if (x1 < this.xMin) return { x: CONSTANTS.WIDTH / 2, y: CONSTANTS.HEIGHT / 2 } // { x: this.xMin, y: this.y }
