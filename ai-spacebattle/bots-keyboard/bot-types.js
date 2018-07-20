@@ -1,1 +1,1 @@
-module.exports = [ 'ddpg-qlearn', 'ddpg-sarsa', 'qlearn', 'sarsa' ]
+module.exports = [ 'ddpg-qlearn', 'ddpg-sarsa' ] // , 'qlearn', 'sarsa' ]

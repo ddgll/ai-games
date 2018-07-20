@@ -1,6 +1,6 @@
 class Context extends CoreContext {
   constructor (data, p, log) {
-    super(data, p, log, CONSTANTS)
+    super(data, p, log, CONSTANTS, null, Bounds)
     this.me = data.ship
     for (let i = 0, l = data.context.s.length, s; i < l; i++) {
       s = data.context.s[i]

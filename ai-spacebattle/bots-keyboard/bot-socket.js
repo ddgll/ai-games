@@ -11,10 +11,10 @@ module.exports = (type, brain, debug = false, url = 'http://space-battle.io') =>
   const socket = io.connect(url)
   socket.on('connect', () => {
     const id = Maths.uuid()
-    let name = null
+    let name = type
 
     const enterGame = () => {
-      name = nameGenerator('general')
+      // name = nameGenerator('general')
       socket.emit('s', name)
     }
     socket.on('f', (data) => {
@@ -38,6 +38,7 @@ module.exports = (type, brain, debug = false, url = 'http://space-battle.io') =>
         enterGame()
       }
     })
+
     let nc = 0
 
     setInterval(() => {

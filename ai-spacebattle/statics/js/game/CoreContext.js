@@ -1,5 +1,5 @@
 class CoreContext {
-  constructor (data, p, log, constants, element) {
+  constructor (data, p, log, constants, element, boundsClass) {
     this.renderer = p
     this.buffer = []
     this.ships = {}
@@ -14,6 +14,7 @@ class CoreContext {
     this.bounds = null
     this.constants = constants
     this.element = element
+    this.boundsClass = boundsClass
   }
 
   exists (id) {
@@ -41,7 +42,7 @@ class CoreContext {
   }
 
   fromRemote (ctx) {
-    if (!ctx) return
+    if (!ctx || !ctx.filter) return
     const last = this.last
     const ctxs = ctx.filter(c => c.t > last)
     if (!ctxs || !ctxs.length) return
@@ -243,6 +244,88 @@ class CoreContext {
         this.planets[id].update({ o, c, cl })
       }
     }
+  }
+
+  sense (shipId, shipX, shipY, shipRotation) {
+    const ships = Object.values(this.ships)
+    const planets = Object.values(this.planets)
+    const bullets = Object.values(this.bullets)
+    const asteroids = Object.values(this.asteroids)
+    const bonuses = []
+
+    const obs = []
+    const bounds = new this.boundsClass(this.constants)
+    let x, y, r, v, ow, vp
+    planets.forEach(p => {
+      x = parseFloat(p.context.x)
+      y = parseFloat(p.context.y) 
+      r = parseFloat(p.context.r)
+      v = this.getShipCoordinates(shipX, shipY, x, y, shipRotation)
+      vp = v
+      // if (bounds.circleCollide(v.x, v.y, r))
+      obs.push({ type: 'p', p: this.getNormType('p'), x: v.x, y: v.y, r })
+    })
+    ships.forEach(s => {
+      if (+s.id === +shipId) return
+      x = parseFloat(s.context.x)
+      y = parseFloat(s.context.y)
+      v = this.getShipCoordinates(shipX, shipY, x, y, shipRotation)
+      obs.push({ type: 's', p: this.getNormType('s'), x: v.x, y: v.y, r: this.constants.SHIP_SIZE })
+    })
+    asteroids.forEach(a => {
+      x = parseFloat(a.context.x)
+      y = parseFloat(a.context.y)
+      v = this.getShipCoordinates(shipX, shipY, x, y, shipRotation)
+      obs.push({ type: 'a', p: this.getNormType('a'), x: v.x, y: v.y, r: this.constants.ASTEROID_RADIUS })
+    })
+    bonuses.forEach(b => {
+      x = parseFloat(b.context.x)
+      y = parseFloat(b.context.y)
+      v = this.getShipCoordinates(shipX, shipY, x, y, shipRotation)
+      obs.push({ type: 'bo', p: this.getNormType('bo'), x: v.x, y: v.y, r: this.constants.BONUSES_RADIUS })
+    })
+    const reg = /^s[0-9]+$/
+    const regrep = /[^0-9]/g
+    bullets.forEach(b => {
+      ow = b.context.o
+      if (reg.test(ow) && +ow.replace(regrep, '') === +shipId) return
+      x = parseFloat(b.context.x)
+      y = parseFloat(b.context.y)
+      v = this.getShipCoordinates(shipX, shipY, x, y, shipRotation)
+      obs.push({ type: 'b', p: this.getNormType('b', reg.test(ow)), x: v.x, y: v.y, r: this.constants.BULLET_RADIUS })
+    })
+    let p1 = this.getShipCoordinates(shipX, shipY, 0, 0, shipRotation)
+    let p2 = this.getShipCoordinates(shipX, shipY, this.constants.WIDTH, 0, shipRotation)
+    let p3 = this.getShipCoordinates(shipX, shipY, 0, this.constants.HEIGHT, shipRotation)
+    let p4 = this.getShipCoordinates(shipX, shipY, this.constants.WIDTH, this.constants.HEIGHT, shipRotation)
+    obs.push({
+      type: 'w',
+      p: this.getNormType('w'),
+      vertices: [ p1, p2, p4, p3 ]
+    })
+    
+    const vision = bounds.getVision(obs)
+    
+    return { o: obs, v: vision }
+  }
+
+  getShipCoordinates (shipX, shipY, x, y, angle) {
+    const a = angle + (Math.PI / 2)
+    const xp = (Math.cos(a) * (x - shipX)) + (Math.sin(a) * (y - shipY))
+    const yp = (-Math.sin(a) * (x - shipX)) + (Math.cos(a) * (y - shipY))
+    return { x: xp, y: yp }
+  }
+
+  getNormType (type, shipBullet) {
+    switch(type) {
+      case 'bo': return -.1
+      case 'w': return .8
+      case 'p': return .6
+      case 'b': return shipBullet ? .4 : .3
+      case 's': return .2
+      case 'a': return .2
+    }
+    return .1
   }
 }
 

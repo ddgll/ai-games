@@ -23,9 +23,9 @@ class Actor {
     // console.log('Create actor first hidden layer')
     const h0 = tf.layers.dense({ units: this.hidden1Size, activation: 'relu', name: `actor${target}FHLayer` }).apply(inputs)
     // console.log('Create actor second hidden layer')
-    const h1 = tf.layers.dense({ units: this.hidden2Size, activation: 'linear', name: `actor${target}SHLayer` }).apply(h0)
+    const h1 = tf.layers.dense({ units: this.hidden2Size, activation: 'relu', name: `actor${target}SHLayer` }).apply(h0)
     // console.log('Create actor output layer')
-    const outputs = tf.layers.dense({ units: this.actionsDim, activation: 'tanh', name: `actor${target}OutputsLayer` }).apply(h1)
+    const outputs = tf.layers.dense({ units: this.actionsDim, activation: 'softmax', name: `actor${target}OutputsLayer` }).apply(h1)
     
     // console.log('Create model')
     const model = tf.model({ inputs, outputs })

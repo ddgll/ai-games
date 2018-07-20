@@ -149,23 +149,20 @@ class ActorCritic {
       const yTTensor = tf.tensor2d(yT, [batchSize, 1])
       const sTensor = tf.tensor2d(states, [batchSize, this.statesDim])
       const aTensor = tf.tensor2d(actions, [batchSize, this.actionsDim])
-      const finBatch = Date.now()
+      // const finBatch = Date.now()
       // console.log('Creation du batch', finBatch - debut, 'ms')
       try {
-        const [ losses, grads ] = await Promise.all([
-          this.critic.model.fit([ sTensor, aTensor ], yTTensor, { batchSize }),
-          this.critic.gradients(aTensor, yTTensor, yT)
-        ])
+        const { losses, grads } = await this.critic.gradients(sTensor, aTensor, yTTensor)
         // const losses = results[0]
         // const grads = results[1]
-        const finCTrain = Date.now()
+        // const finCTrain = Date.now()
         // console.log('Critic train & gradients', finCTrain - finBatch, 'ms')
         if (losses.history && losses.history.length) this.loss = (losses.history.loss.reduce((a, b) => a + b) / losses.history.length)
         this.actor.targetTrain()
-        const finATTrain = Date.now()
+        // const finATTrain = Date.now()
         // console.log('Actor target train', finATTrain - finCTrain, 'ms')
         await this.actor.train(sTensor, grads)
-        const finATrain = Date.now()
+        // const finATrain = Date.now()
         // console.log('Actor train', finATrain - finATTrain, 'ms')
         yTTensor.dispose()
         sTensor.dispose()

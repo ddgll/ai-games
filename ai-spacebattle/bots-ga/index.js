@@ -11,7 +11,7 @@ const actions = ACTIONS_STRING.length
 const GeneticAlgorithm = require('./ga')
 
 const NB_POPULATION = 100
-const NB_SIMULATIONS = 1
+const NB_SIMULATIONS = 50
 
 let bots = []
 let dead = []

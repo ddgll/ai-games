@@ -24,7 +24,7 @@ module.exports = class Sarsa extends Brain {
       experience_size: 10000, // size of experience
       learning_steps_per_iteration: 40,
       tderror_clamp: 1.0, // for robustness
-      num_hidden_units: 1500 // number of neurons in hidden layer
+      num_hidden_units: states * 2 // number of neurons in hidden layer
     }
     
     this.brain = new DQNAgent(this.env, this.spec)

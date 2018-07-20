@@ -15,9 +15,6 @@ class Critic {
     this.actionInputs = null
 
     this.model = this.createNetwork()
-    this.targetModel = this.createNetwork()
-
-    // this.actionGrads = tf.variableGrads((a, b) => a.sum(b), [])
   }
 
   createNetwork () {
@@ -29,18 +26,18 @@ class Critic {
     // console.log('Create critic first hidden states layer')
     const w1 = tf.layers.dense({ units: this.hidden1Size, activation: 'relu', name: `critic${target}SFGLayer` }).apply(S)
     // console.log('Create critic second hidden states layer')
-    const h1 = tf.layers.dense({ units: this.hidden2Size, activation: 'linear', name: `critic${target}SSHLayer` }).apply(w1)
+    const h1 = tf.layers.dense({ units: this.hidden2Size, activation: 'relu', name: `critic${target}SSHLayer` }).apply(w1)
 
     // console.log('Create critic input actions layer')
     const A = tf.layers.input({ shape: [ this.actionsDim ], name: `critic${target}AInputsLayer` })
     // console.log('Create critic first hidden actions layer')
-    const a1 = tf.layers.dense({ units: this.hidden2Size, activation: 'linear', name: `critic${target}AFHLayer` }).apply(A)
+    const a1 = tf.layers.dense({ units: this.hidden2Size, activation: 'relu', name: `critic${target}AFHLayer` }).apply(A)
 
     // console.log('Merge inputs layers')
     const h2 = addLayer.apply([h1, a1])
 
     // console.log('Create critic first hidden layer')
-    const h3 = tf.layers.dense({ units: this.hidden2Size, activation: 'linear', name: `critic${target}FHLayer` }).apply(h2)
+    const h3 = tf.layers.dense({ units: this.hidden2Size, activation: 'relu', name: `critic${target}FHLayer` }).apply(h2)
     // console.log('Create critic output layer')
     const V = tf.layers.dense({ units: 1, activation: 'linear', name: `critic${target}OutputsLayer` }).apply(h3)
 
@@ -54,8 +51,8 @@ class Critic {
       this.actionInputs = A
       // console.log('CREATE Magic system')
       this.grModel = tf.sequential({ layers: [
-        tf.layers.dense({ units: this.hidden2Size, batchInputShape: [null,1], activation: 'linear', name: `criticGAFHLayer` }),
-        tf.layers.dense({ units: this.actionsDim, activation: 'linear', name: `criticGOutputsLayer` })
+        tf.layers.dense({ units: this.hidden2Size, batchInputShape: [null,1], activation: 'relu', name: `criticGAFHLayer` }),
+        tf.layers.dense({ units: this.actionsDim, activation: 'softmax', name: `criticGOutputsLayer` })
       ]})
       // console.log('Compile Magic system')
       this.grModel.compile({ loss: 'meanSquaredError', optimizer: tf.train.adam(this.learninRate) })
@@ -68,10 +65,13 @@ class Critic {
     this.actionGrads = tf.grad(f)
   }
 
-  async gradients (actionsTensor, qValues, qValuesArray) {
-    await this.grModel.fit(qValues, actionsTensor)
-    const data = this.grModel.predictOnBatch(qValues)
-    return data
+  async gradients (statesTensor, actionsTensor, qValues) {
+    const [ losses, pouet ] = await Promise.all([
+      this.model.fit([ statesTensor, actionsTensor ], qValues, { batchSize: qValues.length }),
+      this.grModel.fit(qValues, actionsTensor)
+    ])
+    const grads = this.grModel.predictOnBatch(qValues)
+    return { losses, grads }
   }
 
   targetTrain () {

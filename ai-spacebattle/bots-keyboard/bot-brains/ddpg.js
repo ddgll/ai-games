@@ -7,26 +7,27 @@ module.exports = class Sarsa extends Brain {
   constructor (type = 'q-learning') {
     super()
 
-    const states = (CONSTANTS.VISION.TOP + CONSTANTS.VISION.BOTTOM) * (CONSTANTS.VISION.SIDE * 2) + 2
+    const states = (CONSTANTS.VISION.TOP + CONSTANTS.VISION.BOTTOM) * (CONSTANTS.VISION.SIDE * 2)
     const actions = ACTIONS_STRING.length
-    const temporalWindow = 1
+    const temporalWindow = 2
     const input = states + temporalWindow * (states + actions)
+
+    console.log('STATES', states, 'ACTIONS', actions)
 
     this.brain = new neurojs.Agent({
       type: type, // q-learning or sarsa
       actor: new neurojs.Network.Model([
         { type: 'input', size: input },
-        { type: 'fc', size: 100, activation: 'relu' },
-        { type: 'fc', size: 100, activation: 'relu' },
-        { type: 'fc', size: 100, activation: 'relu', dropout: 0.5 },
-        { type: 'fc', size: actions, activation: 'tanh' },
-        { type: 'regression' }
+        { type: 'fc', size: input, activation: 'relu' },
+        { type: 'fc', size: input, activation: 'relu' },
+        { type: 'fc', size: actions, activation: 'relu', dropout: 0.50 },
+        { type: 'softmax' }
 
       ]),
       critic: new neurojs.Network.Model([
         { type: 'input', size: input + actions },
-        { type: 'fc', size: 200, activation: 'relu' },
-        { type: 'fc', size: 200, activation: 'relu' },
+        { type: 'fc', size: input + actions, activation: 'relu' },
+        { type: 'fc', size: input + actions, activation: 'relu' },
         { type: 'fc', size: 1 },
         { type: 'regression' }
       ]),
@@ -38,15 +39,15 @@ module.exports = class Sarsa extends Brain {
 
       temporalWindow: temporalWindow, 
 
-      discount: 0.95, 
+      discount: 0.97, 
 
-      experience: 75e3, 
-      learningPerTick: 40, 
+      experience: 75e3,
+      learningPerTick: 40,
       startLearningAt: 900,
 
       theta: 0.05, // progressive copy
 
-      alpha: 0.1 // advantage learning
+      alpha: 0.5 // advantage learning
     })
   }
 

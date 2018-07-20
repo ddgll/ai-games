@@ -20,10 +20,8 @@
 
 #log {
   position: fixed;
-  top: 620px;
-  bottom: 0;
+  bottom: 100px;
   right: 0;
-  overflow-y: auto;
 }
 
 #background {

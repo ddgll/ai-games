@@ -78,6 +78,32 @@ class Rect {
     return false;
   }
 
+  polyCollide (vertices) {
+    const rx = this.x,
+          ry = this.y,
+          rw = this.w, 
+          rh = this.h
+  
+    // go through each of the vertices, plus the next vertex in the list
+    var next = 0
+    for (var current=0; current<vertices.length; current++) {
+  
+      // get next vertex in list if we've hit the end, wrap around to 0
+      next = current+1;
+      if (next == vertices.length) next = 0;
+  
+      // get the PVectors at our current position this makes our if statement a little cleaner
+      var vc = vertices[current];    // c for "current"
+      var vn = vertices[next];       // n for "next"
+  
+      // check against all four sides of the rectangle
+      var collision = this.lineCollide(vc.x,vc.y,vn.x,vn.y);
+      if (collision) return true
+    }
+  
+    return false;
+  }
+
   lineCollide (x1, y1, x2, y2, calcIntersection) {
     const rx = this.x,
           ry = this.y,
@@ -229,28 +255,29 @@ class Bounds extends Rect {
       for (let j = 0, ll = this.constants.VISION.TOP + this.constants.VISION.BOTTOM; j < ll; j++){
         y = -(this.constants.VISION.TOP * this.constants.VISION.WIDTH) + j * this.constants.VISION.WIDTH
         rect = new Rect(x, y, this.constants.VISION.WIDTH, this.constants.VISION.WIDTH)
-        vision[i].push(.1)
+        vision[i].push(0)
         short = true
         objects.forEach((o) => {
           switch(o.type) {
             case 'p':
               short = false
+              if (rect.circleCollide(o.x, o.y, o.r, short)) vision[i][j] = 1 // += o.p
+              break;
             case 'b':
             case 'bo':
             case 'a':
-              if (rect.circleCollide(o.x, o.y, o.r, short)) vision[i][j] += o.p
+              if (rect.circleCollide(o.x, o.y, o.r, short)) vision[i][j] = 0.5 // += o.p
               break;
             case 's':
-              if (rect.triangleCollide(o.x, o.y, o.r)) vision[i][j] += o.p
+              if (rect.triangleCollide(o.x, o.y, o.r)) vision[i][j] = 0.5 // += o.p
               break;
             case 'w':
-              const limitsRect = new Rect(o.x, o.y, o.w, o.h)
-              if (!limitsRect.rectCollide(rect.x, rect.y, rect.w, rect.h)) vision[i][j] = 1
+              if (rect.polyCollide(o.vertices)) vision[i][j] = 0.5
+              // if (!limitsRect.rectCollide(rect.x, rect.y, rect.w, rect.h)) vision[i][j] = 1
               break;
           }
         })
-        if (vision[i][j] > 1) vision[i][j] = 1
-        if (vision[i][j] < 0) vision[i][j] = 0
+        // if (vision[i][j] < 0) vision[i][j] = 0
       }
     }
     // console.log(vision)

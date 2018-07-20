@@ -70,7 +70,7 @@ class DDPG extends Algorithm {
 		this.critic.useOptimizer({
 			type: 'descent',
 			method: 'adadelta',
-            regularization: { l2: 1e-3 }
+      regularization: { l2: 1e-3 }
 		})
 
 		// agent

@@ -3829,6 +3829,8 @@ class DDPG extends Algorithm {
 			theta: 0.001, // soft target updates
 		}, agent.options)
 
+		console.log('DDPF Options', this.options)
+
 
 		this.actor = new shared.NetworkWrapper()
 		this.critic = new shared.NetworkWrapper()

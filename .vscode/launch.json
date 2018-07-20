@@ -21,6 +21,13 @@
     {
       "type": "node",
       "request": "launch",
+      "name": "SpaceBattleBots",
+      "program": "${workspaceFolder}\\ai-spacebattle\\bots-keyboard\\index-keyboard.js",
+      "cwd": "${workspaceFolder}\\ai-spacebattle"
+    },
+    {
+      "type": "node",
+      "request": "launch",
       "name": "SpaceBattleBotGA",
       "program": "${workspaceFolder}\\ai-spacebattle\\bots-ga\\index.js",
       "cwd": "${workspaceFolder}\\ai-spacebattle"

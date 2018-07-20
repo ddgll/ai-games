@@ -12,6 +12,7 @@ const sketch = (socket, name) => {
   backgroundDiv.style.width = CONSTANTS.WIDTH + 'px'
   backgroundDiv.style.height = CONSTANTS.HEIGHT + 'px'
   let move = true, mouse, hold = false, buffer = []
+
   return (p) => {
     p.setup = function () {
       p.noStroke()
@@ -50,6 +51,13 @@ const sketch = (socket, name) => {
         console.log('MOVE', move, p.keyCode)
       } else if (p.keyCode === 90) {
         socket.emit('c', [p.mouseX,p.mouseY])
+      } else if (p.keyCode === 80) {
+        if (hold) {
+          p.loop()
+        } else {
+          p.noLoop()
+        }
+        hold = !hold
       }
     }
 
@@ -97,6 +105,61 @@ const sketch = (socket, name) => {
   }
 }
 
+const observe = () => {
+  const VWIDTH = 10
+  const WIDTH = Math.round(2 * CONSTANTS.VISION.SIDE * VWIDTH)
+  const HEIGHT = Math.round((CONSTANTS.VISION.TOP + CONSTANTS.VISION.BOTTOM) * VWIDTH)
+  return (p) => {
+    p.setup = function () {
+      const div = document.getElementById('log')    
+      console.log(WIDTH, HEIGHT)
+      div.style.width = WIDTH * 4 + 'px'
+      div.style.height = HEIGHT * 4 + 'px'
+      p.noStroke()
+      p.createCanvas(WIDTH * 4, HEIGHT * 4)
+      p.frameRate(CONSTANTS.FRAME_RATE)
+    }
+      
+    p.draw = function () {
+      p.clear()
+      p.background(0)
+      if (context && context.planets && context.ships && typeof context.ships[context.me.id] !== 'undefined') {
+        const hero = context.ships[context.me.id]
+        const o = context.sense(hero.id, +hero.context.x, +hero.context.y, +hero.context.a)
+        const vision = o.v
+        const observations = o.o
+
+        const walls = observations[observations.length - 1]
+
+        p.push()
+        p.translate(WIDTH * 2, HEIGHT * 2)
+        p.fill(255, 255, 0)
+        // p.rotate(hero.context.a)
+        p.triangle(VWIDTH / 2, VWIDTH / 2, -VWIDTH/2, VWIDTH/2, 0, -VWIDTH/2)
+        let x, y, red, green
+        p.pop()
+        p.push()
+        p.translate(WIDTH * 2 - WIDTH / 2, HEIGHT * 2 - (CONSTANTS.VISION.TOP * VWIDTH))
+        // p.rotate(-hero.context.a)
+        for (let i = 0, l = 2 * CONSTANTS.VISION.SIDE; i < l; i++) {
+          x = i * VWIDTH
+          for (let j = 0, ll = CONSTANTS.VISION.TOP + CONSTANTS.VISION.BOTTOM; j < ll; j++){
+            y = j * VWIDTH
+            red = (vision[i][j] * 255)
+            green = 255 - red
+            // console.log('FILF', green, red, vision[index])
+            p.stroke(255)
+            p.fill(red, green, 0, 125)
+            p.rect(x, y, VWIDTH, VWIDTH)
+          }
+        }
+        p.rect(walls.x, walls.y, walls.w, walls.h)
+        p.pop()
+      }
+    }
+  }
+}
+
 const minimap = () => {
   const getMinimapCoords = (x, y) => {
     return { x: x / CONSTANTS.MINIMAP_SCALE, y: y / CONSTANTS.MINIMAP_SCALE }
@@ -129,6 +192,52 @@ const minimap = () => {
       if (context && context.planets && context.ships && typeof context.ships[context.me.id] !== 'undefined') {
         const planets = context.planets
         const hero = context.ships[context.me.id]
+        const o = context.sense(hero.id, hero.x, hero.y, hero.context.a)
+        const vision = o.v
+        const observations = o.o
+
+        p.push()
+        p.translate(CONSTANTS.VISION.SIDE * 4 * CONSTANTS.VISION.WIDTH, CONSTANTS.VISION.TOP * 2 * CONSTANTS.VISION.WIDTH)
+        p.fill(255, 255, 0)
+        p.rotate(hero.context.a)
+        p.triangle(CONSTANTS.SHIP_SIZE/2, CONSTANTS.SHIP_SIZE/2, -CONSTANTS.SHIP_SIZE/2, CONSTANTS.SHIP_SIZE/2, 0, -CONSTANTS.SHIP_SIZE/2)
+        let x, y, red, green, index
+        for (let i = 0, l = 2 * CONSTANTS.VISION.SIDE; i < l; i++) {
+          x = -(CONSTANTS.VISION.SIDE * CONSTANTS.VISION.WIDTH) + i * CONSTANTS.VISION.WIDTH
+          for (let j = 0, ll = CONSTANTS.VISION.TOP + CONSTANTS.VISION.BOTTOM; j < ll; j++){
+            y = -(CONSTANTS.VISION.TOP * CONSTANTS.VISION.WIDTH) + j * CONSTANTS.VISION.WIDTH
+            red = (vision[i][j] * 255)
+            green = 255 - red
+            // console.log('FILF', green, red, vision[index])
+            p.stroke(255)
+            p.fill(red, green, 0, 125)
+            p.rect(x, y, CONSTANTS.VISION.WIDTH, CONSTANTS.VISION.WIDTH)
+          }
+        }
+        // console.log(observations)
+        p.noStroke()
+        p.fill(255)
+        observations.forEach((o) => {
+          switch(o.type) {
+            case 'bo':
+            case 'p':
+            case 'b':
+            case 'a':
+              p.ellipse(o.x, o.y, o.r, o.r || 15)
+              break;
+            case 's':
+              p.ellipse(o.x, o.y, o.r, o.r)
+              break;
+            case 'w':
+              p.strokeWeight(4)
+              p.stroke(0, 255, 0)
+              p.noFill()
+              p.rect(o.x, o.y, o.w, o.h)
+              break;
+          }
+        })
+        p.pop()
+
         let item, radius, coords, owner, challenge, challenger
         for(let id in planets) {
           item = planets[id]
@@ -221,18 +330,14 @@ function init () {
   })
 
   socket.on('connect', function () {
-    // setTimeout(() => {
-    //   const name = nameInput.value
-    //   if (form.style.display === 'none' && name.length) {
-    //     socket.emit('s', name)
-    //   }
-    // }, 3000)
+    go('ddgll')
   })
 }
 
 function launchGame(socket, name) {
   new p5(sketch(socket, name), 'game')
   new p5(minimap(), 'minimap')
+  new p5(observe(), 'log')
 }
 
 function sqr(a) {

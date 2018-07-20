@@ -220,7 +220,7 @@ function Car (x, y, brain, isBest, isTest) {
     })
     this.outputs = this.brain.activate(inputs)
     // console.log(JSON.stringify(inputs))
-    console.log(JSON.stringify(this.outputs))
+    // console.log(JSON.stringify(this.outputs))
     this.label = this.oneHotDecode(this.outputs)
     if (this.test) {
       console.log('INPUTS', this.oneHotEncode(this.label), this.obstacles.map(o => o && o.d ? o.d / this.seight : 1), this.label, inputs)

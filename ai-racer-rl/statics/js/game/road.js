@@ -50,8 +50,7 @@ class Road {
     const points = r ? [
       { x: x - r, y: y - r },
       { x: x - r, y: y + r },
-      { x: x + r, y: y + r },
-      { x: x + r, y: y - r }
+      { x: x + r, y: y }
     ] : [
       { x, y }
     ]
@@ -388,7 +387,7 @@ class Road {
 
   draw () {
     noStroke()
-    if (this.needMinusDot()) {
+    if (DEBUG && this.needMinusDot()) {
       fill(255, 255, 0)
     } else {
       fill(255, 0, 0)
@@ -420,7 +419,7 @@ class Road {
         ellipse(this.xCollide, this.yCollide, 4, 4)
       }
       if (this.wallLines && this.wallLines.length) {
-        stroke(255, 255, 0)
+        stroke(0, 0, 255)
         strokeWeight(1)
         this.wallLines.forEach(l => {
           line(l.x1, l.y1, l.x2, l.y2)

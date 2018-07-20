@@ -173,34 +173,34 @@ module.exports = class Ship extends Element {
         this.life -= life * CONSTANTS.DIFFICULTY
         if (!noGod) this.god = 50
       }
-      this.gra.x = 0
-      this.gra.y = 0
-      this.vel.x = 0
-      this.vel.y = 0
-      let dx = x - this.x,
-          dy = y - this.y
-      if (wall) {
-        dx = x - CONSTANTS.WIDTH / 2
-        dy = y - CONSTANTS.HEIGHT / 2
-      }
-			let distSQ = dx * dx + dy * dy,
-          dist = Math.sqrt(distSQ),
-          ax = (dx) / dist * 6,
-          ay = (dy) / dist * 6
-      // if (Maths.magnitude(ax, ay) < CONSTANTS.SHIP_SPEED) {
-      //   let v = Maths.magnitude(ax, ay, CONSTANTS.SHIP_SPEED)
-      //   ax = v.x
-      //   ay = v.y
-      // }
-      this.vel.x -= ax;
-      this.vel.y -= ay;
+    }
+    this.gra.x = 0
+    this.gra.y = 0
+    this.vel.x = 0
+    this.vel.y = 0
+    let dx = x - this.x,
+        dy = y - this.y
+    if (wall) {
+      dx = x - CONSTANTS.WIDTH / 2
+      dy = y - CONSTANTS.HEIGHT / 2
+    }
+    let distSQ = dx * dx + dy * dy,
+        dist = Math.sqrt(distSQ),
+        ax = (dx) / dist * 6,
+        ay = (dy) / dist * 6
+    // if (Maths.magnitude(ax, ay) < CONSTANTS.SHIP_SPEED) {
+    //   let v = Maths.magnitude(ax, ay, CONSTANTS.SHIP_SPEED)
+    //   ax = v.x
+    //   ay = v.y
+    // }
+    this.vel.x -= ax;
+    this.vel.y -= ay;
 
-      const angle = Maths.angleBetween(0, 0, x - this.x, y - this.y)
-      if (wall) {
-        this.vel = Maths.fromAngle(angle, this.speed)
-      } else {
-        this.vel = Maths.fromAngle(angle + Math.PI, this.speed)
-      }
+    const angle = Maths.angleBetween(0, 0, x - this.x, y - this.y)
+    if (wall) {
+      this.vel = Maths.fromAngle(angle, this.speed)
+    } else {
+      this.vel = Maths.fromAngle(angle + Math.PI, this.speed)
     }
     this.collide = collide
   }
@@ -306,7 +306,7 @@ module.exports = class Ship extends Element {
     if (!this.dead && this.life > 0) {
       const dist = Maths.distance(this.x, this.y, this.oldX, this.oldY)
       this.distance += dist / 100
-      if (dist < 1) this.life -= 2
+      if (dist < .5) this.life -= .5
     }
 
     if (this.life <= 0 || this.dead) {

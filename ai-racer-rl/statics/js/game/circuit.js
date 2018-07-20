@@ -281,16 +281,13 @@ class Circuit {
     for (let i = 0, l = this.roads.length; i < l; i++) {
       road = this.roads[i]
       if (road.collide(x, y, r)) collide = true
+    }
+    for (let i = 0, l = this.roads.length; i < l; i++) {
+      road = this.roads[i]
       if (road.contains(x, y, r, true)) {
-        // if (found) dist += found.distance
-        // console.log('CONTAINED')
         const optimal = this.getOptimalDirectionDiff(car)
-        // if (car.optimal > .5 && optimal < .5) {
-        //   car.impact =  1 + car.optimal
-        // }
         car.optimal = optimal
         if (car.optimal < .5) {
-          // car.heading -= car.rotation * 4
           car.reverse = true
         } else {
           car.reverse = false
@@ -303,7 +300,6 @@ class Circuit {
       }
     }
     if (found) {
-      // console.log('CAR Optimal', car.optimal)
       const np = found.getNormalizedPosition(car.position.x, car.position.y)
       dist += distance(found.x, found.y, np.x, np.y)
       if (car) car.checkDistance(found, index, dist, this.distance)

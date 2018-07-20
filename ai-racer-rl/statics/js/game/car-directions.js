@@ -47,8 +47,7 @@ function Car (x, y, savedBrain, isBest, isTest) {
         { type: 'input', size: input },
         { type: 'fc', size: input, activation: 'relu' },
         { type: 'fc', size: input, activation: 'relu' },
-        { type: 'fc', size: input, activation: 'relu', dropout: 0.50 },
-        { type: 'fc', size: actions, activation: 'tanh' },
+        { type: 'fc', size: actions, activation: 'relu', dropout: 0.50 },
         { type: 'softmax' }
       ]),
       critic: new neurojs.Network.Model([
@@ -288,7 +287,7 @@ function Car (x, y, savedBrain, isBest, isTest) {
     })
     this.proximity = this.proximity / this.obstacles.length
 
-    inputs.push(normalize(this.heading, -TWO_PI, TWO_PI))
+    inputs.push(normalize(this.velocity.mag(), -TWO_PI, TWO_PI))
     inputs.push(normalize(this.optimal, 0, TWO_PI))
     inputs.push(this.reverse ? 0 : 1)
     inputs.push(normalize(this.velocity.mag(), 0, 3))
@@ -373,7 +372,6 @@ function Car (x, y, savedBrain, isBest, isTest) {
       this.reward = -0.5
     } else {
       this.reward = this.isBreaking ? 0 : normalize(this.velocity.mag(), 0, 5)
-      if (this.reward > 0 && this.velocity.mag() < 1e-2) this.reward = -0.1
     }
     if (collide) {
       this.reward = -1

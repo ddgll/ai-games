@@ -126,10 +126,8 @@ const observe = (id) => {
     debugObs.push(p)
     p.setup = () => {
       p.noStroke()
-      const canvas = p.createCanvas(CONSTANTS.VISION.SIDE * 4 * CONSTANTS.VISION.WIDTH, CONSTANTS.VISION.TOP * 2 * CONSTANTS.VISION.WIDTH)
+      p.createCanvas(CONSTANTS.VISION.SIDE * 4 * CONSTANTS.VISION.WIDTH, CONSTANTS.VISION.TOP * 2 * CONSTANTS.VISION.WIDTH)
       p.frameRate(30)
-
-
     }
 
     const lerp = (norm, min, max) => {
@@ -338,8 +336,12 @@ function init () {
   const scaleY = (y - 300) / CONSTANTS.HEIGHT
   
   scale = scaleX > scaleY ? scaleY : scaleX
-  if (scale > 1) scale = 0.8
-  console.log('SCALE', scale)
+  if (scale > 1) {
+    scale = 0.9
+  } else {
+    scale *= 1.4
+  }
+  console.log('SCALE', scale, scaleX > scaleY ? scaleY : scaleX)
   
   CONSTANTS.CANVAS_WIDTH_ORIG = CONSTANTS.CANVAS_WIDTH
   CONSTANTS.CANVAS_HEIGHT_ORIG = CONSTANTS.CANVAS_HEIGHT

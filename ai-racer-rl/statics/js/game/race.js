@@ -2,19 +2,19 @@ const FRAME_RATE = 30
 var POPULATION = 1
 const DEFAULT_ROAD_WIDTH = 50
 var DEFAULT_CIRCUIT_SIZE
-const DEBUG = true
+const DEBUG = false
 const MAX_SIZE = 200
 const ELITISM_PERCENT = 0.1
 const MUTATION_RATE = 0.3
 const CANVAS_WIDTH = 600
 const CANVAS_HEIGHT = 700
 const TURN_ANGLE = 0.1
-const AIR_RESISTENCE = 0.90
-const BOOST_FORCE = 0.45
+const AIR_RESISTENCE = 0.87
+const BOOST_FORCE = 0.35
 const BREAK_RESISTENCE = 0.05
 const SHOW_RACE_LINE = true
 const WALL_SIZE = 8
-const SEIGHT_PAS = 0.1
+const SEIGHT_PAS = 0.005
 const NB_SENSORS = 8
 
 var nextNbPopulation = POPULATION * 1
@@ -28,6 +28,7 @@ var best
 var selectSize
 var selectPopulation
 var selectBrain
+var training = true
 var testCar
 var bestBrain
 var bestScore = -Infinity
@@ -115,7 +116,7 @@ function setup () {
   Y_START = 0
   log = createDiv('')
 
-  let startButton, stopButton
+  let startButton, stopButton, startTraining, stopTraining
 
   startButton = createButton('Start')
   startButton.position(uiX, uiY);
@@ -172,6 +173,39 @@ function setup () {
       selectSize.option(size)
     }
   })
+  
+  p = createP('Traning')
+  p.position(uiX, uiY+=40)
+  button = createButton()
+  button.position(uiX, uiY+=40)
+  button.mousePressed(() => {
+    training = !training
+    if (car) car.training = training
+  })
+
+  startTraining = createButton('Start training')
+  startTraining.position(uiX, uiY);
+  startTraining.mousePressed(() => {
+    training = true
+    if (car) {
+      car.training = true
+      car.brain.alpha = 0.5
+    }
+    stopTraining.elt.style.display = 'block'
+    startTraining.elt.style.display = 'none'
+  })
+  stopTraining = createButton('Stop training')
+  stopTraining.position(uiX, uiY);
+  stopTraining.mousePressed(() => {
+    training = false
+    if (car) {
+      car.training = false
+      car.brain.alpha = 0
+    }
+    startTraining.elt.style.display = 'block'
+    stopTraining.elt.style.display = 'none'
+  })
+  startTraining.elt.style.display = 'none'
 
   log = createDiv('LOG')
   log.position(uiX, uiY+=40)
@@ -185,7 +219,6 @@ function setup () {
 var framess = 0
 function draw () {
   const maxc = sliderm.value()
-  let first
   for (let i = 0; i < maxc; i++) {
     if (circuit) {
       if (testCar) {
@@ -195,6 +228,10 @@ function draw () {
       }
       if (car) {
         car.update(circuit)
+        if (car.brain.age > 990 && car.brain.age < 1000) {
+          sliderm.value(1)
+          break;
+        }
       }
     }
   }
