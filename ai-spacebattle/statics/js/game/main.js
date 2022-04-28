@@ -330,7 +330,7 @@ function init () {
   })
 
   socket.on('connect', function () {
-    go('ddgll')
+    // go('ddgll')
   })
 }
 
