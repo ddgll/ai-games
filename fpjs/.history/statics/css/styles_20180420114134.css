@@ -1,0 +1,12 @@
+#container {
+  margin-top: 0
+}
+
+.game {
+  width: 75px;
+  float: left;
+}
+
+.game .log {
+  font-size: 8px
+}

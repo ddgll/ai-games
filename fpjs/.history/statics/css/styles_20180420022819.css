@@ -1,0 +1,8 @@
+.game {
+  width: 210px;
+  float: left;
+}
+
+.game .log {
+  font-size: 8px
+}

@@ -1,0 +1,36 @@
+{
+  // Utilisez IntelliSense pour en savoir plus sur les attributs possibles.
+  // Pointez pour afficher la description des attributs existants.
+  // Pour plus d'informations, visitez : https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Tensorflow",
+      "program": "${workspaceFolder}\\tensorflow\\index.js",
+      "cwd": "${workspaceFolder}\\tensorflow"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "SpaceBattleServer",
+      "program": "${workspaceFolder}\\ai-spacebattle\\index.js",
+      "cwd": "${workspaceFolder}\\ai-spacebattle"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "SpaceBattleBots",
+      "program": "${workspaceFolder}\\ai-spacebattle\\bots-keyboard\\index-keyboard.js",
+      "cwd": "${workspaceFolder}\\ai-spacebattle"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "SpaceBattleBotGA",
+      "program": "${workspaceFolder}\\ai-spacebattle\\bots-ga\\index.js",
+      "cwd": "${workspaceFolder}\\ai-spacebattle"
+    }
+  ]
+}

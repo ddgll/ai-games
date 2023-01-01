@@ -1,0 +1,62 @@
+#container {
+  position: relative;
+  overflow: hidden;
+}
+
+#game {
+  position: relative;
+}
+#minimap {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+}
+
+#frame {
+  position: fixed;
+  bottom: 0;
+  width: 400px;
+}
+
+#log {
+  position: fixed;
+  bottom: 100px;
+  right: 0;
+}
+
+#background {
+  position: absolute;
+  background: url(/images/background.png) repeat center center transparent;
+}
+
+#first {
+  position: fixed;
+  top: 0;
+  left: 0;
+  color: white;
+  background: transparent;
+}
+
+#brain {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ffffff;
+}
+
+#logs {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  max-width: 50vw;
+  max-height: 90vh;
+  background-color: #ffffff;
+}
+
+#actions {
+  position: fixed;
+  top: 8px;
+  right: 8px;
+}

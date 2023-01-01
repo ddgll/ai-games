@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+  <head>
+    <title>ai-spacebattle</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.0/socket.io.js"></script>
+    <script src="/js/libraries/p5/p5.min.js"></script>
+    <script src="/js/constants.js"></script>
+    <script src="/js/game/fExplosion.js"></script>
+    <script src="/js/game/fParticles.js"></script>
+    <script src="/js/game/fElement.js"></script>
+    <script src="/js/game/fPlanet.js"></script>
+    <script src="/js/game/fAsteroid.js"></script>
+    <script src="/js/game/fShip.js"></script>
+    <script src="/js/game/fBullet.js"></script>
+    <script src="/js/bounds.js"></script>
+    <script src="/js/game/CoreContext.js"></script>
+    <script src="/js/game/fContext.js"></script>
+    <script src="/js/game/main.js"></script>
+    <link rel="stylesheet" type="text/css" href="/css/styles.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+  </head>
+  <body onload="init()" style="overflow: hidden;">
+    <div id="form">
+      <h4>Enter your name and click "GO !"</h4>
+      <input type="text" id="name" />
+      <button type="button" id="go">GO !</button>
+    </div>
+    <div id="container" style="display: none;">
+      <div id="background"></div>
+      <div id="game"></div>
+      <div id="minimap"></div>
+    </div>
+    <div id="frame"></div>
+    <div id="log"></div>
+  </body>
+</html>
